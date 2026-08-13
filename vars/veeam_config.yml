@@ -37,3 +37,17 @@ targets:
       application_aware_processing: true
 
       run_after_create: true
+
+   sql:
+
+      installer_path: C:\Installers\SQLEXPR_x64_ENU.exe
+
+      instance_name: VEEAMSQL2022
+
+      instance_id: VEEAMSQL2022
+
+      features: SQLENGINE
+
+       browser_startup_type: Automatic
+
+       sa_password: Yokogawa123!
