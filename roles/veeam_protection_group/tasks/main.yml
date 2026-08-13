@@ -1,1 +1,7 @@
+---
+- name: Create Protection Group
+  win_shell: |
+    Import-Module Veeam.Backup.PowerShell
 
+    Write-Host "Creating Protection Group {{ item.protection_group.name }}"
+  loop: "{{ targets }}"
