@@ -4,9 +4,9 @@
     path: "{{ sql.installer_path }}"
   register: sql_installer
 
-- name: Fail if SQL installer missing
+- name: Fail if SQL installer not found
   fail:
-    msg: "SQL installer not found at {{ sql.installer_path }}"
+    msg: "SQL installer not found"
   when: not sql_installer.stat.exists
 
 - name: Install SQL Server Express
@@ -15,24 +15,39 @@
     arguments: >
       /Q
       /ACTION=Install
-      /FEATURES={{ sql.features }}
+      /FEATURES=SQLENGINE
       /INSTANCENAME={{ sql.instance_name }}
       /INSTANCEID={{ sql.instance_id }}
-      /IACCEPTSQLSERVERLICENSETERMS
       /TCPENABLED=1
+      /IACCEPTSQLSERVERLICENSETERMS
     state: present
 
-- name: Ensure SQL Browser service startup automatic
+- name: Set SQL Browser to automatic
   win_service:
-    name: SQLBrowser
+    name: "{{ sql.sql_browser_service }}"
     start_mode: auto
+
+- name: Start SQL Browser
+  win_service:
+    name: "{{ sql.sql_browser_service }}"
     state: started
 
-- name: Check SQL service
-  win_service_info:
-    name: MSSQL${{ sql.instance_name }}
-  register: sql_service
+- name: Restart SQL instance
+  win_service:
+    name: "{{ sql.sql_service_name }}"
+    state: restarted
+  failed_when: false
 
-- name: Show SQL service status
+- name: Add SYSTEM as sysadmin
+  win_shell: |
+    sqlcmd -S localhost\{{ sql.instance_name }} -E -Q "EXEC sp_addsrvrolemember 'NT AUTHORITY\SYSTEM','sysadmin'"
+  failed_when: false
+
+- name: Verify sysadmin role
+  win_shell: |
+    sqlcmd -S localhost\{{ sql.instance_name }} -E -Q "select IS_SRVROLEMEMBER('sysadmin','NT AUTHORITY\SYSTEM')"
+  register: sql_verify
+
+- name: Display SQL verification
   debug:
-    var: sql_service
+    var: sql_verify.stdout
