@@ -1,1 +1,10 @@
+---
+- name: Create Veeam Protection Group
+  hosts: veeam_server
+  gather_facts: false
 
+  vars_files:
+    - ../vars/veeam_config.yml
+
+  roles:
+    - veeam_protection_group
