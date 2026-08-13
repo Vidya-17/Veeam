@@ -1,1 +1,38 @@
+---
+- name: Verify SQL installer exists
+  win_stat:
+    path: "{{ sql.installer_path }}"
+  register: sql_installer
 
+- name: Fail if SQL installer missing
+  fail:
+    msg: "SQL installer not found at {{ sql.installer_path }}"
+  when: not sql_installer.stat.exists
+
+- name: Install SQL Server Express
+  win_package:
+    path: "{{ sql.installer_path }}"
+    arguments: >
+      /Q
+      /ACTION=Install
+      /FEATURES={{ sql.features }}
+      /INSTANCENAME={{ sql.instance_name }}
+      /INSTANCEID={{ sql.instance_id }}
+      /IACCEPTSQLSERVERLICENSETERMS
+      /TCPENABLED=1
+    state: present
+
+- name: Ensure SQL Browser service startup automatic
+  win_service:
+    name: SQLBrowser
+    start_mode: auto
+    state: started
+
+- name: Check SQL service
+  win_service_info:
+    name: MSSQL${{ sql.instance_name }}
+  register: sql_service
+
+- name: Show SQL service status
+  debug:
+    var: sql_service
