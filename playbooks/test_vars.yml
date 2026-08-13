@@ -1,0 +1,13 @@
+---
+- name: Verify Veeam variables
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - ../vars/veeam_config.yml
+
+  tasks:
+
+    - name: Show target configuration
+      debug:
+        var: targets
