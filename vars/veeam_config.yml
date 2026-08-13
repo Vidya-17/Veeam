@@ -44,11 +44,9 @@ targets:
 
   vbr:
 
-      server_name: WIN-9Q45419SF7I
-
       vdk_path: C:\VDK
 
-      hostname:
+      hostname: WIN-9Q45419SF7I
 
       setup_path: C:\Users\Administrator\Setup
 
