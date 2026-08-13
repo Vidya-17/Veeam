@@ -50,15 +50,17 @@ targets:
 
       sql_browser_service: SQLBrowser
 
-  veeam:
+  vbr:
 
-      installer_path: C:\Installers\Setup.exe
+      hostname:
 
-      sql_instance: VEEAMSQL2022
+      setup_path: C:\Users\Administrator\Setup
 
-      service_account: LOCAL_SYSTEM
+      silent_installer: C:\Users\Administrator\Setup\Veeam.Silent.Install.exe
 
-      install_path: C:\Program Files\Veeam
+      answer_file: C:\Temp\VBRAnswer.xml
+
+      log_flder: C:\Temp\VeeamLogs
 
       repository: Default Backup Repository
 
