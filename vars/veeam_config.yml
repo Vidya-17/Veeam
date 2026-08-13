@@ -1,1 +1,39 @@
+vbr:
 
+  server_name: backup01
+
+  vdk_path: C:\VDK
+
+  repository: Default Backup Repository
+
+targets:
+
+  - hostname: WIN-N09EOQN5PFF
+
+    ip_address: 192.168.161.144
+
+    deploy_vdk: true
+
+    protection_group:
+
+      name: Veeam_Target
+
+      auth_method: certificate
+
+    backup_job:
+
+      name: Veeam_Target_Backup
+
+      type: server
+
+      mode: managed_by_backup_server
+
+      backup_mode: entire_computer
+
+      repository: Default Backup Repository
+
+      retention_days: 7
+
+      application_aware_processing: true
+
+      run_after_create: true
