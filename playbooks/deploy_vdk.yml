@@ -1,1 +1,10 @@
+---
+- name: Deploy VDK to Windows targets
+  hosts: veeam_targets
+  gather_facts: false
 
+  vars_files:
+    - ../vars/veeam_config.yml
+
+  roles:
+    - veeam_vdk_deploy
