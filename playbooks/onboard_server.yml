@@ -6,6 +6,10 @@
   vars_files:
     - ../vars/veeam_config.yml
 
+- import_playbook: install_sql.yml
+
+- import_playbook: install_vbr.yml
+
 - import_playbook: deploy_vdk.yml
 
 - import_playbook: create_protection_group.yml
