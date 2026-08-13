@@ -1,11 +1,3 @@
-vbr:
-
-  server_name: backup01
-
-  vdk_path: C:\VDK
-
-  repository: Default Backup Repository
-
 targets:
 
   - hostname: WIN-N09EOQN5PFF
@@ -51,6 +43,10 @@ targets:
       sql_browser_service: SQLBrowser
 
   vbr:
+
+      server_name: WIN-9Q45419SF7I
+
+      vdk_path: C:\VDK
 
       hostname:
 
