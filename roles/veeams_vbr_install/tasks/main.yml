@@ -1,1 +1,26 @@
+---
+- name: Verify Veeam installer exists
+  win_stat:
+    path: "{{ veeam.installer_path }}"
+  register: veeam_installer
 
+- name: Fail if Veeam installer missing
+  fail:
+    msg: "Veeam installer not found at {{ veeam.installer_path }}"
+  when: not veeam_installer.stat.exists
+
+- name: Install Veeam Backup and Replication
+  win_package:
+    path: "{{ veeam.installer_path }}"
+    arguments: "/silent"
+    state: present
+    
+- name: Check Veeam Backup Service
+  win_service_info:
+    name: VeeamBackupSvc
+  register: veeam_service
+
+- name: Display Veeam service status
+  debug:
+    var: veeam_service
+``
