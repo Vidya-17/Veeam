@@ -40,17 +40,15 @@ targets:
 
    sql:
 
-      installer_path: C:\Installers\SQLEXPR_x64_ENU.exe
+      installer_path: C:\Installers\SQLEXPR_x64_ENU\setup.exe
 
       instance_name: VEEAMSQL2022
 
       instance_id: VEEAMSQL2022
 
-      features: SQLENGINE
+      sql_service_name: MSSQL$VEEAMSQL2022
 
-       browser_startup_type: Automatic
-
-       sa_password: Yokogawa123!
+      sql_browser_service: SQLBrowser
 
   veeam:
 
