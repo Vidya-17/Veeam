@@ -1,1 +1,19 @@
+---
+- name: Create VDK directory on target
+  win_file:
+    path: C:\VDK
+    state: directory
 
+- name: Copy VDK package to target
+  win_copy:
+    src: "{{ vbr.vdk_path }}\\"
+    dest: C:\VDK\
+
+- name: Run Veeam Deployment Kit
+  win_shell: |
+    C:\VDK\InstallDeploymentKit.bat
+  register: vdk_install
+
+- name: Display VDK installation output
+  debug:
+    var: vdk_install.stdout
