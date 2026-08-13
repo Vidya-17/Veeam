@@ -1,1 +1,7 @@
+---
+- name: Run Backup Job
+  win_shell: |
+    Import-Module Veeam.Backup.PowerShell
 
+    Write-Host "Starting Backup {{ item.backup_job.name }}"
+  loop: "{{ targets }}"
