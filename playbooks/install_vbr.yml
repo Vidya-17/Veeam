@@ -6,5 +6,48 @@
   vars_files:
     - ../vars/veeam_config.yml
 
-  roles:
-    - veeams_vbr_install
+  tasks:
+
+    - name: Create Temp directory
+      win_file:
+        path: C:\Temp
+        state: directory
+
+    - name: Create Veeam log directory
+      win_file:
+        path: "{{ vbr.log_folder }}"
+        state: directory
+
+    - name: Generate VBR Answer File
+      win_template:
+        src: ../roles/veeams_vbr_install/templates/vbr_answerfile.xml.j2
+        dest: "{{ vbr.answer_file }}"
+
+    - name: Verify Veeam Silent Installer Exists
+      win_stat:
+        path: "{{ vbr.silent_installer }}"
+      register: veeam_installer
+
+    - name: Fail if Veeam Silent Installer Missing
+      fail:
+        msg: "Veeam silent installer not found at {{ vbr.silent_installer }}"
+      when: not veeam_installer.stat.exists
+
+    - name: Start Veeam Silent Installation
+      win_shell: |
+        "{{ vbr.silent_installer }}" /AnswerFile "{{ vbr.answer_file }}" /LogFolder "{{ vbr.log_folder }}"
+      register: veeam_install
+
+    - name: Display installation output
+      debug:
+        var: veeam_install.stdout
+
+    - name: Check Veeam Backup Service
+      win_service_info:
+        name: VeeamBackupSvc
+      register: veeam_service
+      failed_when: false
+
+    - name: Display Veeam service information
+      debug:
+        var: veeam_service
