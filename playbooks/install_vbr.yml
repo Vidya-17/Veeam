@@ -20,7 +20,7 @@
 
     - name: Generate VBR Answer File
       win_template:
-        src: ../roles/veeams_vbr_install/templates/vbr_answerfile.xml.j2
+        src: ../templates/vbr_answerfile.xml.j2
         dest: "{{ vbr.answer_file }}"
 
     - name: Verify Veeam Silent Installer Exists
