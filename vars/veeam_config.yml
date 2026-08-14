@@ -44,7 +44,7 @@ targets:
 
   vbr:
 
-      vdk_path: C:\VDK
+      # vdk_path: C:\VDK
 
       hostname: WIN-2JS87DVNUFR
 
