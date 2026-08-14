@@ -80,4 +80,15 @@
       debug:
         var: veeam_install.stderr
 
-    - name: Show Veeam log folder 
+    - name: Show Veeam log folder contents
+      win_shell: |
+        Get-ChildItem C:\VeeamLogs -Recurse -Force
+      register: veeam_logs
+      failed_when: false
+      
+    - name: Display veeam log files
+      debug:
+        var: veeam_logs.stdout
+    
+
+ 
