@@ -46,15 +46,15 @@ targets:
 
       vdk_path: C:\VDK
 
-      hostname: WIN-9Q45419SF7I
+      hostname: WIN-2JS87DVNUFR
 
-      setup_path: C:\Users\Administrator\Setup
+      setup_path: C:\Veeam\Veeam
 
-      silent_installer: C:\Users\Administrator\Setup\Veeam.Silent.Install.exe
+      silent_installer: C:\Veeam\Veeam\Setup\Veeam.Silent.Install.exe
 
       answer_file: C:\Temp\VBRAnswer.xml
 
-      log_flder: C:\Temp\VeeamLogs
+      log_folder: C:\Temp\VeeamLogs
 
       repository: Default Backup Repository
 
