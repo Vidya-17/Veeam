@@ -38,6 +38,7 @@
         cd "C:\Veeam\Veeam\Setup\Silent"
         .\Veeam.Silent.Install.exe /AnswerFile "{{ vbr.answer_file }}" /LogFolder "{{ vbr.log_folder }}"
       register: veeam_install
+      failed_when: false
 
     - name: Display installation return code
       debug:
@@ -51,6 +52,26 @@
       debug:
         var: veeam_install.stderr
 
+    - name: Show Veeam log folder contents
+      win_shell: |
+        Get-ChildItem "{{ vbr.log_folder }}" -Recurse -Force
+      register: veeam_logs
+      failed_when: false
+
+    - name: Display Veeam log files
+      debug:
+        var: veeam_logs.stdout
+
+    - name: Show ProgramData Veeam files
+      win_shell: |
+        Get-ChildItem "C:\ProgramData" -Recurse -Force -ErrorAction SilentlyContinue | Where-Object {$_.FullName -match "Veeam"}
+      register: veeam_programdata
+      failed_when: false
+
+    - name: Display ProgramData Veeam files
+      debug:
+        var: veeam_programdata.stdout
+
     - name: Check Veeam Backup Service
       win_shell: |
         Get-Service VeeamBackupSvc
@@ -60,3 +81,11 @@
     - name: Display Veeam service information
       debug:
         var: veeam_service.stdout
+
+    - name: Fail if Veeam installation returned error
+      fail:
+        msg: |
+          Veeam installation failed.
+          Return code: {{ veeam_install.rc }}
+          StdErr: {{ veeam_install.stderr }}
+      when: veeam_install.rc|int != 0
