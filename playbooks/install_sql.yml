@@ -51,4 +51,3 @@
     - name: Show verification result
       debug:
         var: sql_verify.stdout
-``
