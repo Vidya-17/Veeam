@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<unattendedInstallationConfiguration bundle="Vbr"
-                                     mode="install"
-                                     version="1.1">
+<unattendedInstallationConfiguration bundle="Vbr" mode="install" version="1.0">
 
   <properties>
 
-    <!-- License -->
+    <!-- License agreements -->
 
     <property name="ACCEPT_EULA" value="1" />
     <property name="ACCEPT_LICENSING_POLICY" value="1" />
     <property name="ACCEPT_THIRDPARTY_LICENSES" value="1" />
     <property name="ACCEPT_REQUIRED_SOFTWARE" value="1" />
 
-    <property name="VBR_LICENSE_FILE" value="" />
+    <!-- Community Edition -->
+
+    <property name="VBR_LICENSE_FILE" value="0" />
 
     <property name="VBR_LICENSE_AUTOUPDATE" value="0" />
-    <property name="VBR_PROACTIVE_SUPPORT" value="0" />
 
-    <!-- Service Account -->
-    <!-- Empty means LOCAL SYSTEM -->
+    <!-- Local System Account -->
 
     <property name="VBR_SERVICE_USER" value="" />
-    <property name="VBR_SERVICE_PASSWORD" value="" />
+    <property name="VBR_SERVICE_PASSWORD" value="" hidden="1" />
 
-    <!-- SQL Configuration -->
+    <!-- Database configuration -->
 
     <property name="VBR_SQLSERVER_INSTALL" value="0" />
+
+    <property name="VBR_ENTRAID_DATABASE_INSTALL" value="0" />
+
     <property name="VBR_SQLSERVER_ENGINE" value="0" />
 
     <property
@@ -47,33 +47,58 @@
 
     <property
       name="VBR_SQLSERVER_PASSWORD"
-      value="" />
-
-    <!-- Disable built-in PostgreSQL -->
-
-    <property
-      name="VBR_ENTRAID_DATABASE_INSTALL"
-      value="0" />
+      value=""
+      hidden="1" />
 
     <!-- Ports -->
 
     <property name="VBRC_SERVICE_PORT" value="9393" />
+
     <property name="VBR_SERVICE_PORT" value="9392" />
-    <property name="VBR_RESTSERVICE_PORT" value="9419" />
 
-    <!-- Optional Components Disabled -->
+    <property
+      name="VBR_SECURE_CONNECTIONS_PORT"
+      value="9401" />
 
+    <property
+      name="VBR_RESTSERVICE_PORT"
+      value="9419" />
+
+    <!-- Data locations -->
+
+    <property
+      name="INSTALLDIR"
+      value="C:\Program Files\Veeam\Backup and Replication" />
+
+    <property
+      name="VM_CATALOGPATH"
+      value="C:\VBRCatalog" />
+
+    <property
+      name="VBR_IRCACHE"
+      value="C:\ProgramData\Veeam\Backup\IRCache" />
+
+    <!-- Disable update checks -->
+
+    <property
+      name="VBR_CHECK_UPDATES"
+      value="0" />
+
+    <!-- Disable optional plug-ins -->
+
+    <property name="AHV_INSTALL" value="0" />
+    <property name="KVM_INSTALL" value="0" />
+    <property name="PVE_INSTALL" value="0" />
     <property name="AWS_INSTALL" value="0" />
     <property name="AZURE_INSTALL" value="0" />
+    <property name="GCP_INSTALL" value="0" />
     <property name="KASTEN_INSTALL" value="0" />
-    <property name="UHAPI_INSTALL" value="0" />
-    <property name="HPE_INSTALL" value="0" />
-    <property name="XEN_INSTALL" value="0" />
-    <property name="SCP_INSTALL" value="0" />
 
     <!-- Reboot -->
 
-    <property name="REBOOT_IF_REQUIRED" value="0" />
+    <property
+      name="REBOOT_IF_REQUIRED"
+      value="0" />
 
   </properties>
 
