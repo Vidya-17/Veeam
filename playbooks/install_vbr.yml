@@ -34,15 +34,23 @@
       when: not veeam_installer.stat.exists
 
     - name: Start Veeam Silent Installation
-      win_command: >
-        {{ vbr.silent_installer }}
-        /AnswerFile {{ vbr.answer_file }}
-        /LogFolder {{ vbr.log_folder }}
+      win_shell: |
+        cd "C:\Veeam\Veeam\Setup\Silent"
+        .\Veeam.Silent.Install.exe /AnswerFile "{{ vbr.answer_file }}" /LogFolder "{{ vbr.log_folder }}"
       register: veeam_install
+      failed_when: false
 
-    - name: Display installation output
+    - name: Display installation return code
+      debug:
+        var: veeam_install.rc
+
+    - name: Display installation stdout
       debug:
         var: veeam_install.stdout
+
+    - name: Display installation stderr
+      debug:
+        var: veeam_install.stderr
 
     - name: Check Veeam Backup Service
       win_shell: |
