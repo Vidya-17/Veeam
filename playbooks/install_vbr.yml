@@ -43,11 +43,11 @@
         var: veeam_install.stdout
 
     - name: Check Veeam Backup Service
-      win_service_info:
-        name: VeeamBackupSvc
+      win_shell: |
+        Get-Service VeeamBackupSvc
       register: veeam_service
       failed_when: false
 
     - name: Display Veeam service information
       debug:
-        var: veeam_service
+        var: veeam_service.stdout
