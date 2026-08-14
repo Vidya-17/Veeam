@@ -38,7 +38,6 @@
         cd "C:\Veeam\Veeam\Setup\Silent"
         .\Veeam.Silent.Install.exe /AnswerFile "{{ vbr.answer_file }}" /LogFolder "{{ vbr.log_folder }}"
       register: veeam_install
-      failed_when: false
 
     - name: Display installation return code
       debug:
