@@ -7,4 +7,4 @@
     - ../vars/veeam_config.yml
 
   roles:
-    - veeam_vbr_install
+    - veeams_vbr_install
