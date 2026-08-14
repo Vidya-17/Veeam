@@ -6,5 +6,8 @@
   vars_files:
     - ../vars/veeam_config.yml
 
-  roles:
-    - veeam_sql_install
+  tasks:
+
+    - name: Include SQL Role
+      include_role:
+        name: veeam_sql_install
