@@ -10,17 +10,15 @@
   when: not sql_installer.stat.exists
 
 - name: Install SQL Server Express
-  win_package:
-    path: "{{ sql.installer_path }}"
-    arguments: >
-      /Q
-      /ACTION=Install
-      /FEATURES=SQLENGINE
-      /INSTANCENAME={{ sql.instance_name }}
-      /INSTANCEID={{ sql.instance_id }}
-      /TCPENABLED=1
+  win_shell: |
+    "{{ sql.installer_path }}"
+      /Q ^
+      /ACTION=Install ^
+      /FEATURES=SQLENGINE ^
+      /INSTANCENAME={{ sql.instance_name }} ^
+      /INSTANCEID={{ sql.instance_id }} ^
+      /TCPENABLED=1 ^
       /IACCEPTSQLSERVERLICENSETERMS
-    state: present
 
 - name: Set SQL Browser to automatic
   win_service:
