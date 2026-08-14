@@ -33,10 +33,18 @@
         msg: "Veeam silent installer not found at {{ vbr.silent_installer }}"
       when: not veeam_installer.stat.exists
 
+    - name: Create installer working folder
+      win_file:
+        path: C:\VeeamLogs
+        state: directory
+
     - name: Start Veeam Silent Installation
       win_shell: |
-        cd "C:\Veeam\Veeam\Setup\Silent"
-        .\Veeam.Silent.Install.exe /AnswerFile "{{ vbr.answer_file }}" /LogFolder "{{ vbr.log_folder }}"
+        Start-Process `
+          -FilePath "{{ vbr.silent_installer }}" `
+          -ArgumentList '/AnswerFile "{{ vbr.answer_file }}" /LogFolder C:\VeeamLogs' `
+          -Wait `
+          -PassThru
       register: veeam_install
       failed_when: false
 
@@ -54,7 +62,7 @@
 
     - name: Show Veeam log folder contents
       win_shell: |
-        Get-ChildItem "{{ vbr.log_folder }}" -Recurse -Force
+        Get-ChildItem C:\VeeamLogs -Recurse -Force
       register: veeam_logs
       failed_when: false
 
@@ -64,7 +72,7 @@
 
     - name: Read unattended installation result
       win_shell: |
-        Get-Content "{{ vbr.log_folder }}\UnattendedInstallationResult*.xml"
+        Get-Content C:\VeeamLogs\UnattendedInstallationResult*.xml
       register: unattended_result
       failed_when: false
 
@@ -74,7 +82,8 @@
 
     - name: Show ProgramData Veeam files
       win_shell: |
-        Get-ChildItem "C:\ProgramData" -Recurse -Force -ErrorAction SilentlyContinue | Where-Object {$_.FullName -match "Veeam"}
+        Get-ChildItem "C:\ProgramData" -Recurse -Force -ErrorAction SilentlyContinue |
+        Where-Object {$_.FullName -match "Veeam"}
       register: veeam_programdata
       failed_when: false
 
