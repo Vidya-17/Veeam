@@ -1,6 +1,6 @@
 ---
 - name: Install SQL Server
-  hosts: veeam_server
+  hosts: all
   gather_facts: false
 
   vars_files:
