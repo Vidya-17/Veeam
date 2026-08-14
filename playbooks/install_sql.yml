@@ -27,6 +27,7 @@
       /INSTANCENAME={{ sql.instance_name }}
       /INSTANCEID={{ sql.instance_id }}
       /TCPENABLED=1
+      /UpdateEnabled=False
       /IACCEPTSQLSERVERLICENSETERMS
 
   - name: Set SQL Browser startup type to automatic
