@@ -33,62 +33,49 @@
         msg: "Veeam silent installer not found at {{ vbr.silent_installer }}"
       when: not veeam_installer.stat.exists
 
-    - name: Check pending reboot keys
-      win_shell: |
-        $result = @()
-
-        if (Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending") {
-          $result += "CBS RebootPending"
-        }
-
-        if (Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired") {
-          $result += "WindowsUpdate RebootRequired"
-        }
-
-        $result
-      register: reboot_check
-      failed_when: false
-
-    - name: Display reboot status
-      debug:
-        var: reboot_check.stdout
-
     - name: Create installer working folder
       win_file:
         path: C:\VeeamLogs
         state: directory
 
-    - name: Start Veeam Silent Installation
+    - name: Create scheduled task for Veeam installation
+      win_scheduled_task:
+        name: VeeamInstall
+        username: SYSTEM
+        run_level: highest
+        actions:
+          - path: "{{ vbr.silent_installer }}"
+            arguments: '/AnswerFile "{{ vbr.answer_file }}" /LogFolder C:\VeeamLogs'
+        triggers: []
+        state: present
+
+    - name: Run scheduled task
       win_shell: |
-        Start-Process `
-          -FilePath "{{ vbr.silent_installer }}" `
-          -ArgumentList '/AnswerFile "{{ vbr.answer_file }}" /LogFolder C:\VeeamLogs' `
-          -Wait `
-          -PassThru
-      register: veeam_install
+        schtasks /Run /TN "VeeamInstall"
       failed_when: false
 
-    - name: Display installation return code
-      debug:
-        var: veeam_install.rc
-
-    - name: Display installation stdout
-      debug:
-        var: veeam_install.stdout
-
-    - name: Display installation stderr
-      debug:
-        var: veeam_install.stderr
+    - name: Wait for Veeam installation
+      pause:
+        minutes: 5
 
     - name: Show Veeam log folder contents
       win_shell: |
         Get-ChildItem C:\VeeamLogs -Recurse -Force
       register: veeam_logs
       failed_when: false
-      
-    - name: Display veeam log files
+
+    - name: Display Veeam log files
       debug:
         var: veeam_logs.stdout
-    
 
- 
+    - name: Read unattended installation result
+      win_shell: |
+        Get-Content C:\VeeamLogs\UnattendedInstallationResult*.xml -Raw
+      register: unattended_result
+      failed_when: false
+
+    - name: Display unattended installation result
+      debug:
+        var: unattended_result.stdout
+
+    - name: Check Veeam services
