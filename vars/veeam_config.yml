@@ -30,32 +30,30 @@ targets:
 
       run_after_create: true
 
-   sql:
 
-      installer_path: C:\Installers\SQLEXPR_x64_ENU\setup.exe
+sql:
 
-      instance_name: VEEAMSQL2022
+  installer_path: C:\Installers\SQLEXPR_x64_ENU\setup.exe
 
-      instance_id: VEEAMSQL2022
+  instance_name: VEEAMSQL2022
 
-      sql_service_name: MSSQL$VEEAMSQL2022
+  instance_id: VEEAMSQL2022
 
-      sql_browser_service: SQLBrowser
+  sql_service_name: MSSQL$VEEAMSQL2022
 
-  vbr:
+  sql_browser_service: SQLBrowser
 
-      # vdk_path: C:\VDK
 
-      hostname: WIN-2JS87DVNUFR
+vbr:
 
-      setup_path: C:\Veeam\Veeam
+  hostname: WIN-2JS87DVNUFR
 
-      silent_installer: C:\Veeam\Veeam\Setup\Veeam.Silent.Install.exe
+  setup_path: C:\Veeam\Veeam
 
-      answer_file: C:\Temp\VBRAnswer.xml
+  silent_installer: C:\Veeam\Veeam\Setup\Veeam.Silent.Install.exe
 
-      log_folder: C:\Temp\VeeamLogs
+  answer_file: C:\Temp\VBRAnswer.xml
 
-      repository: Default Backup Repository
+  log_folder: C:\Temp\VeeamLogs
 
-      
+  repository: Default Backup Repository
