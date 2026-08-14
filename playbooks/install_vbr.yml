@@ -34,8 +34,10 @@
       when: not veeam_installer.stat.exists
 
     - name: Start Veeam Silent Installation
-      win_shell: |
-        "{{ vbr.silent_installer }}" /AnswerFile "{{ vbr.answer_file }}" /LogFolder "{{ vbr.log_folder }}"
+      win_command: >
+        {{ vbr.silent_installer }}
+        /AnswerFile {{ vbr.answer_file }}
+        /LogFolder {{ vbr.log_folder }}
       register: veeam_install
 
     - name: Display installation output
