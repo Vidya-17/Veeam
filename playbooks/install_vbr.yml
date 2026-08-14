@@ -33,6 +33,26 @@
         msg: "Veeam silent installer not found at {{ vbr.silent_installer }}"
       when: not veeam_installer.stat.exists
 
+    - name: Check pending reboot keys
+      win_shell: |
+        $result = @()
+
+        if (Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending") {
+          $result += "CBS RebootPending"
+        }
+
+        if (Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired") {
+          $result += "WindowsUpdate RebootRequired"
+        }
+
+        $result
+      register: reboot_check
+      failed_when: false
+
+    - name: Display reboot status
+      debug:
+        var: reboot_check.stdout
+
     - name: Create installer working folder
       win_file:
         path: C:\VeeamLogs
@@ -40,9 +60,11 @@
 
     - name: Start Veeam Silent Installation
       win_shell: |
-        & "{{ vbr.silent_installer }}" `
-          /AnswerFile "{{ vbr.answer_file }}" `
-          /LogFolder "C:\VeeamLogs"
+        Start-Process `
+          -FilePath "{{ vbr.silent_installer }}" `
+          -ArgumentList '/AnswerFile "{{ vbr.answer_file }}" /LogFolder C:\VeeamLogs' `
+          -Wait `
+          -PassThru
       register: veeam_install
       failed_when: false
 
@@ -58,51 +80,4 @@
       debug:
         var: veeam_install.stderr
 
-    - name: Show Veeam log folder contents
-      win_shell: |
-        Get-ChildItem C:\VeeamLogs -Recurse -Force
-      register: veeam_logs
-      failed_when: false
-
-    - name: Display Veeam log files
-      debug:
-        var: veeam_logs.stdout
-
-    - name: Read unattended installation result
-      win_shell: |
-        Get-Content C:\VeeamLogs\UnattendedInstallationResult*.xml -Raw
-      register: unattended_result
-      failed_when: false
-
-    - name: Display unattended installation result
-      debug:
-        var: unattended_result.stdout
-
-    - name: Show ProgramData Veeam files
-      win_shell: |
-        Get-ChildItem "C:\ProgramData" -Recurse -Force -ErrorAction SilentlyContinue |
-        Where-Object {$_.FullName -match "Veeam"}
-      register: veeam_programdata
-      failed_when: false
-
-    - name: Display ProgramData Veeam files
-      debug:
-        var: veeam_programdata.stdout
-
-    - name: Check Veeam Backup Service
-      win_shell: |
-        Get-Service VeeamBackupSvc
-      register: veeam_service
-      failed_when: false
-
-    - name: Display Veeam service information
-      debug:
-        var: veeam_service.stdout
-
-    - name: Fail if Veeam installation returned error
-      fail:
-        msg: |
-          Veeam installation failed.
-          Return code: {{ veeam_install.rc }}
-          StdErr: {{ veeam_install.stderr }}
-      when: veeam_install.rc|int != 0
+    - name: Show Veeam log folder 
