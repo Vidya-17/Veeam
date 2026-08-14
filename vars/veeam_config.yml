@@ -50,7 +50,7 @@ vbr:
 
   setup_path: C:\Veeam\Veeam
 
-  silent_installer: C:\Veeam\Veeam\Setup\Veeam.Silent.Install.exe
+  silent_installer: C:\Veeam\Veeam\Setup\Silent\Veeam.Silent.Install.exe
 
   answer_file: C:\Temp\VBRAnswer.xml
 
