@@ -40,11 +40,9 @@
 
     - name: Start Veeam Silent Installation
       win_shell: |
-        Start-Process `
-          -FilePath "{{ vbr.silent_installer }}" `
-          -ArgumentList '/AnswerFile "{{ vbr.answer_file }}" /LogFolder C:\VeeamLogs' `
-          -Wait `
-          -PassThru
+        & "{{ vbr.silent_installer }}" `
+          /AnswerFile "{{ vbr.answer_file }}" `
+          /LogFolder "C:\VeeamLogs"
       register: veeam_install
       failed_when: false
 
@@ -72,7 +70,7 @@
 
     - name: Read unattended installation result
       win_shell: |
-        Get-Content C:\VeeamLogs\UnattendedInstallationResult*.xml
+        Get-Content C:\VeeamLogs\UnattendedInstallationResult*.xml -Raw
       register: unattended_result
       failed_when: false
 
