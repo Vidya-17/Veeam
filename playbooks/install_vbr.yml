@@ -62,6 +62,16 @@
       debug:
         var: veeam_logs.stdout
 
+    - name: Read unattended installation result
+      win_shell: |
+        Get-Content "{{ vbr.log_folder }}\UnattendedInstallationResult*.xml"
+      register: unattended_result
+      failed_when: false
+
+    - name: Display unattended installation result
+      debug:
+        var: unattended_result.stdout
+
     - name: Show ProgramData Veeam files
       win_shell: |
         Get-ChildItem "C:\ProgramData" -Recurse -Force -ErrorAction SilentlyContinue | Where-Object {$_.FullName -match "Veeam"}
