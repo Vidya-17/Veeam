@@ -57,3 +57,16 @@ vbr:
   log_folder: C:\Temp\VeeamLogs
 
   repository: Default Backup Repository
+
+
+
+# all:
+#   hosts:
+#     veeam_vbr:
+#       ansible_host: 192.168.x.x        # IP of the Windows Server VM in VMware Workstation
+#       ansible_user: Administrator      # must be a LOCAL Administrator account
+#       ansible_password: "{{ vault_win_admin_password }}"
+#       ansible_connection: winrm
+#       ansible_winrm_transport: ntlm    # or basic/credssp depending on your WinRM config
+#       ansible_winrm_server_cert_validation: ignore
+#       ansible_port: 5985               # 5986 if you've set up HTTPS listener
