@@ -70,3 +70,24 @@ vbr:
 #       ansible_winrm_transport: ntlm    # or basic/credssp depending on your WinRM config
 #       ansible_winrm_server_cert_validation: ignore
 #       ansible_port: 5985               # 5986 if you've set up HTTPS listener
+
+
+# # vars/veeam_config.yml
+# vbr:
+#   hostname: WIN-2JS87DVNUFR
+#   setup_path: C:\Veeam\Veeam
+#   silent_installer: C:\Veeam\Veeam\Setup\Silent\Veeam.Silent.Install.exe
+#   answer_file: C:\Temp\VBRAnswer.xml
+#   log_folder: C:\VeeamLogs
+#   repository: Default Backup Repository
+
+#   # Local admin account used to run the installer.
+#   # This MUST be a local Administrator account, not LocalSystem/NetworkService.
+#   install_user: Administrator
+
+# # Set this to true only after you've validated an interactive local admin
+# # logon works (see README notes). Leaving it true tells Ansible to launch
+# # the installer with a real interactive token instead of a WinRM network
+# # logon token, which is what avoids the "permission denied" pre-flight
+# # check failures in the first place.
+# use_interactive_become: true
