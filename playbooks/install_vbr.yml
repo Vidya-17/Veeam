@@ -1,254 +1,99 @@
 ---
-- name: Install Veeam Backup and Replication
-  hosts: all
-  gather_facts: false
-
-  vars_files:
-    - ../vars/veeam_config.yml
-
-  tasks:
-
-    - name: Create Temp directory
-      win_file:
-        path: C:\Temp
-        state: directory
-
-    - name: Create Veeam log directory
-      win_file:
-        path: "{{ vbr.log_folder }}"
-        state: directory
-
-    - name: Generate VBR Answer File
-      win_template:
-        src: ../templates/vbr_answerfile.xml.j2
-        dest: "{{ vbr.answer_file }}"
-
-    - name: Verify Veeam Silent Installer Exists
-      win_stat:
-        path: "{{ vbr.silent_installer }}"
-      register: veeam_installer
-
-    - name: Fail if Veeam Silent Installer Missing
-      fail:
-        msg: "Veeam silent installer not found at {{ vbr.silent_installer }}"
-      when: not veeam_installer.stat.exists
-
-    - name: Check pending reboot keys
-      win_shell: |
-        $result = @()
-
-        if (Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending") {
-          $result += "CBS RebootPending"
-        }
-
-        if (Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired") {
-          $result += "WindowsUpdate RebootRequired"
-        }
-
-        $result
-      register: reboot_check
-      failed_when: false
-
-    - name: Display reboot status
-      debug:
-        var: reboot_check.stdout
-
-    - name: Create installer working folder
-      win_file:
-        path: C:\VeeamLogs
-        state: directory
-
-    - name: Start Veeam Silent Installation
-      win_shell: |
-        & "{{ vbr.silent_installer }}" `
-          /AnswerFile "{{ vbr.answer_file }}" `
-          /LogFolder "C:\VeeamLogs"
-      register: veeam_install
-      failed_when: false
-
-    - name: Display installation return code
-      debug:
-        var: veeam_install.rc
-
-    - name: Display installation stdout
-      debug:
-        var: veeam_install.stdout
-
-    - name: Display installation stderr
-      debug:
-        var: veeam_install.stderr
-
-    - name: Show Veeam log folder contents
-      win_shell: |
-        Get-ChildItem C:\VeeamLogs -Recurse -Force
-      register: veeam_logs
-      failed_when: false
-
-    - name: Display Veeam log files
-      debug:
-        var: veeam_logs.stdout
-
-    - name: Read latest unattended installation result
-      win_shell: |
-        $file = Get-ChildItem C:\VeeamLogs\UnattendedInstallationResult*.xml |
-                Sort-Object LastWriteTime -Descending |
-                Select-Object -First 1
-
-        if ($file) {
-          Get-Content $file.FullName -Raw
-        }
-      register: unattended_result
-      failed_when: false
-
-    - name: Display unattended installation result
-      debug:
-        var: unattended_result.stdout
-
-    - name: Show ProgramData Veeam files
-      win_shell: |
-        Get-ChildItem "C:\ProgramData" -Recurse -Force -ErrorAction SilentlyContinue |
-        Where-Object {$_.FullName -match "Veeam"}
-      register: veeam_programdata
-      failed_when: false
-
-    - name: Display ProgramData Veeam files
-      debug:
-        var: veeam_programdata.stdout
-
-    - name: Check Veeam services
-      win_shell: |
-        Get-Service *Veeam*
-      register: veeam_service
-      failed_when: false
-
-    - name: Display Veeam service information
-      debug:
-        var: veeam_service.stdout
-
-    - name: Fail if Veeam installation returned error
-      fail:
-        msg: |
-          Veeam installation failed.
-          Return code: {{ veeam_install.rc }}
-          StdErr: {{ veeam_install.stderr }}
-
-
-
-#   -------------------------------------------------
-
-#   ---
 # - name: Install Veeam Backup and Replication
 #   hosts: all
 #   gather_facts: false
+
 #   vars_files:
 #     - ../vars/veeam_config.yml
 
 #   tasks:
+
 #     - name: Create Temp directory
-#       ansible.windows.win_file:
+#       win_file:
 #         path: C:\Temp
 #         state: directory
 
 #     - name: Create Veeam log directory
-#       ansible.windows.win_file:
+#       win_file:
 #         path: "{{ vbr.log_folder }}"
 #         state: directory
 
 #     - name: Generate VBR Answer File
-#       ansible.windows.win_template:
+#       win_template:
 #         src: ../templates/vbr_answerfile.xml.j2
 #         dest: "{{ vbr.answer_file }}"
 
 #     - name: Verify Veeam Silent Installer Exists
-#       ansible.windows.win_stat:
+#       win_stat:
 #         path: "{{ vbr.silent_installer }}"
 #       register: veeam_installer
 
 #     - name: Fail if Veeam Silent Installer Missing
-#       ansible.builtin.fail:
+#       fail:
 #         msg: "Veeam silent installer not found at {{ vbr.silent_installer }}"
 #       when: not veeam_installer.stat.exists
 
 #     - name: Check pending reboot keys
-#       ansible.windows.win_shell: |
+#       win_shell: |
 #         $result = @()
+
 #         if (Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending") {
 #           $result += "CBS RebootPending"
 #         }
+
 #         if (Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired") {
 #           $result += "WindowsUpdate RebootRequired"
 #         }
+
 #         $result
 #       register: reboot_check
 #       failed_when: false
 
 #     - name: Display reboot status
-#       ansible.builtin.debug:
-#         var: reboot_check.stdout_lines
+#       debug:
+#         var: reboot_check.stdout
 
-#     - name: Warn if a reboot is pending
-#       ansible.builtin.debug:
-#         msg: >
-#           WARNING: A reboot appears to be pending on {{ vbr.hostname }}.
-#           Veeam's silent installer can fail unpredictably with a reboot
-#           pending — reboot the VM and re-run this play if the install fails.
-#       when: reboot_check.stdout | trim | length > 0
+#     - name: Create installer working folder
+#       win_file:
+#         path: C:\VeeamLogs
+#         state: directory
 
-#     # -----------------------------------------------------------------
-#     # THIS is the key fix for "permission denied checking for updates".
-#     #
-#     # Ansible/WinRM authenticates as a "network logon", and Veeam's
-#     # installer refuses to run its pre-flight checks properly under a
-#     # network logon (Access Denied on checks it needs a real local/
-#     # interactive token for). We fix this two ways:
-#     #   1. become: runas with logon_type=interactive gives the process a
-#     #      genuine interactive token instead of a network-logon token.
-#     #   2. /SkipNetworkLogonErrors on the command line as a fallback, in
-#     #      case become isn't usable in your environment (e.g. gMSA,
-#     #      restricted WinRM config).
-#     # -----------------------------------------------------------------
 #     - name: Start Veeam Silent Installation
-#       ansible.windows.win_shell: |
+#       win_shell: |
 #         & "{{ vbr.silent_installer }}" `
 #           /AnswerFile "{{ vbr.answer_file }}" `
-#           /LogFolder "{{ vbr.log_folder }}" `
-#           /SkipNetworkLogonErrors
-#       become: "{{ use_interactive_become }}"
-#       become_method: runas
-#       become_user: "{{ vbr.install_user }}"
-#       become_flags: logon_type=interactive logon_flags=with_profile
+#           /LogFolder "C:\VeeamLogs"
 #       register: veeam_install
 #       failed_when: false
 
 #     - name: Display installation return code
-#       ansible.builtin.debug:
+#       debug:
 #         var: veeam_install.rc
 
 #     - name: Display installation stdout
-#       ansible.builtin.debug:
-#         var: veeam_install.stdout_lines
+#       debug:
+#         var: veeam_install.stdout
 
 #     - name: Display installation stderr
-#       ansible.builtin.debug:
-#         var: veeam_install.stderr_lines
-#       when: veeam_install.stderr | default('') | length > 0
+#       debug:
+#         var: veeam_install.stderr
 
 #     - name: Show Veeam log folder contents
-#       ansible.windows.win_shell: |
-#         Get-ChildItem "{{ vbr.log_folder }}" -Recurse -Force |
-#           Select-Object FullName, LastWriteTime
+#       win_shell: |
+#         Get-ChildItem C:\VeeamLogs -Recurse -Force
 #       register: veeam_logs
 #       failed_when: false
 
 #     - name: Display Veeam log files
-#       ansible.builtin.debug:
-#         var: veeam_logs.stdout_lines
+#       debug:
+#         var: veeam_logs.stdout
 
 #     - name: Read latest unattended installation result
-#       ansible.windows.win_shell: |
-#         $file = Get-ChildItem "{{ vbr.log_folder }}\UnattendedInstallationResult*.xml" -ErrorAction SilentlyContinue |
+#       win_shell: |
+#         $file = Get-ChildItem C:\VeeamLogs\UnattendedInstallationResult*.xml |
 #                 Sort-Object LastWriteTime -Descending |
 #                 Select-Object -First 1
+
 #         if ($file) {
 #           Get-Content $file.FullName -Raw
 #         }
@@ -256,29 +101,184 @@
 #       failed_when: false
 
 #     - name: Display unattended installation result
-#       ansible.builtin.debug:
+#       debug:
 #         var: unattended_result.stdout
-#       when: unattended_result.stdout | default('') | length > 0
+
+#     - name: Show ProgramData Veeam files
+#       win_shell: |
+#         Get-ChildItem "C:\ProgramData" -Recurse -Force -ErrorAction SilentlyContinue |
+#         Where-Object {$_.FullName -match "Veeam"}
+#       register: veeam_programdata
+#       failed_when: false
+
+#     - name: Display ProgramData Veeam files
+#       debug:
+#         var: veeam_programdata.stdout
 
 #     - name: Check Veeam services
-#       ansible.windows.win_shell: |
-#         Get-Service *Veeam* -ErrorAction SilentlyContinue |
-#           Select-Object Name, Status
+#       win_shell: |
+#         Get-Service *Veeam*
 #       register: veeam_service
 #       failed_when: false
 
 #     - name: Display Veeam service information
-#       ansible.builtin.debug:
-#         var: veeam_service.stdout_lines
+#       debug:
+#         var: veeam_service.stdout
 
-#     # Veeam's installer can legitimately return 3010 (success, reboot
-#     # required) as well as 0 (success). Anything else is a real failure.
-#     - name: Fail if Veeam installation returned an error
-#       ansible.builtin.fail:
+#     - name: Fail if Veeam installation returned error
+#       fail:
 #         msg: |
 #           Veeam installation failed.
 #           Return code: {{ veeam_install.rc }}
-#           StdErr: {{ veeam_install.stderr | default('(none)') }}
-#           Check the log folder at {{ vbr.log_folder }} on {{ vbr.hostname }} for full details.
-#       when: veeam_install.rc not in [0, 3010]
+#           StdErr: {{ veeam_install.stderr }}
+
+
+
+#   -------------------------------------------------
+
+  ---
+- name: Install Veeam Backup and Replication
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - ../vars/veeam_config.yml
+
+  tasks:
+    - name: Create Temp directory
+      ansible.windows.win_file:
+        path: C:\Temp
+        state: directory
+
+    - name: Create Veeam log directory
+      ansible.windows.win_file:
+        path: "{{ vbr.log_folder }}"
+        state: directory
+
+    - name: Generate VBR Answer File
+      ansible.windows.win_template:
+        src: ../templates/vbr_answerfile.xml.j2
+        dest: "{{ vbr.answer_file }}"
+
+    - name: Verify Veeam Silent Installer Exists
+      ansible.windows.win_stat:
+        path: "{{ vbr.silent_installer }}"
+      register: veeam_installer
+
+    - name: Fail if Veeam Silent Installer Missing
+      ansible.builtin.fail:
+        msg: "Veeam silent installer not found at {{ vbr.silent_installer }}"
+      when: not veeam_installer.stat.exists
+
+    - name: Check pending reboot keys
+      ansible.windows.win_shell: |
+        $result = @()
+        if (Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending") {
+          $result += "CBS RebootPending"
+        }
+        if (Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired") {
+          $result += "WindowsUpdate RebootRequired"
+        }
+        $result
+      register: reboot_check
+      failed_when: false
+
+    - name: Display reboot status
+      ansible.builtin.debug:
+        var: reboot_check.stdout_lines
+
+    - name: Warn if a reboot is pending
+      ansible.builtin.debug:
+        msg: >
+          WARNING: A reboot appears to be pending on {{ vbr.hostname }}.
+          Veeam's silent installer can fail unpredictably with a reboot
+          pending — reboot the VM and re-run this play if the install fails.
+      when: reboot_check.stdout | trim | length > 0
+
+    # -----------------------------------------------------------------
+    # THIS is the key fix for "permission denied checking for updates".
+    #
+    # Ansible/WinRM authenticates as a "network logon", and Veeam's
+    # installer refuses to run its pre-flight checks properly under a
+    # network logon (Access Denied on checks it needs a real local/
+    # interactive token for). We fix this two ways:
+    #   1. become: runas with logon_type=interactive gives the process a
+    #      genuine interactive token instead of a network-logon token.
+    #   2. /SkipNetworkLogonErrors on the command line as a fallback, in
+    #      case become isn't usable in your environment (e.g. gMSA,
+    #      restricted WinRM config).
+    # -----------------------------------------------------------------
+    - name: Start Veeam Silent Installation
+      ansible.windows.win_shell: |
+        & "{{ vbr.silent_installer }}" `
+          /AnswerFile "{{ vbr.answer_file }}" `
+          /LogFolder "{{ vbr.log_folder }}" `
+          /SkipNetworkLogonErrors
+      become: "{{ use_interactive_become }}"
+      become_method: runas
+      become_user: "{{ vbr.install_user }}"
+      become_flags: logon_type=interactive logon_flags=with_profile
+      register: veeam_install
+      failed_when: false
+
+    - name: Display installation return code
+      ansible.builtin.debug:
+        var: veeam_install.rc
+
+    - name: Display installation stdout
+      ansible.builtin.debug:
+        var: veeam_install.stdout_lines
+
+    - name: Display installation stderr
+      ansible.builtin.debug:
+        var: veeam_install.stderr_lines
+      when: veeam_install.stderr | default('') | length > 0
+
+    - name: Show Veeam log folder contents
+      ansible.windows.win_shell: |
+        Get-ChildItem "{{ vbr.log_folder }}" -Recurse -Force |
+          Select-Object FullName, LastWriteTime
+      register: veeam_logs
+      failed_when: false
+
+    - name: Display Veeam log files
+      ansible.builtin.debug:
+        var: veeam_logs.stdout_lines
+
+    - name: Read latest unattended installation result
+      ansible.windows.win_shell: |
+        $file = Get-ChildItem "{{ vbr.log_folder }}\UnattendedInstallationResult*.xml" -ErrorAction SilentlyContinue |
+                Sort-Object LastWriteTime -Descending |
+                Select-Object -First 1
+        if ($file) {
+          Get-Content $file.FullName -Raw
+        }
+      register: unattended_result
+      failed_when: false
+
+    - name: Display unattended installation result
+      ansible.builtin.debug:
+        var: unattended_result.stdout
+      when: unattended_result.stdout | default('') | length > 0
+
+    - name: Check Veeam services
+      ansible.windows.win_shell: |
+        Get-Service *Veeam* -ErrorAction SilentlyContinue |
+          Select-Object Name, Status
+      register: veeam_service
+      failed_when: false
+
+    - name: Display Veeam service information
+      ansible.builtin.debug:
+        var: veeam_service.stdout_lines
+
+    # Veeam's installer can legitimately return 3010 (success, reboot
+    # required) as well as 0 (success). Anything else is a real failure.
+    - name: Fail if Veeam installation returned an error
+      ansible.builtin.fail:
+        msg: |
+          Veeam installation failed.
+          Return code: {{ veeam_install.rc }}
+          StdErr: {{ veeam_install.stderr | default('(none)') }}
+          Check the log folder at {{ vbr.log_folder }} on {{ vbr.hostname }} for full details.
+      when: veeam_install.rc not in [0, 3010]
 
