@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<unattendedInstallationConfiguration bundle="Vbr" mode="install" version="1.0">
+<unattendedInstallationConfiguration bundle="Vbr" mode="install" version="1.1">
 
   <properties>
 
@@ -12,14 +12,13 @@
 
     <!-- Community Edition -->
 
-    <property name="VBR_LICENSE_FILE" value="" />
+    <property name="VBR_LICENSE_FILE" value="0" />
     <property name="VBR_LICENSE_AUTOUPDATE" value="1" />
+    <property name="VBR_PROACTIVE_SUPPORT" value="1" />
 
     <!-- Database configuration -->
 
     <property name="VBR_SQLSERVER_INSTALL" value="0" />
-
-    <property name="VBR_ENTRAID_DATABASE_INSTALL" value="0" />
 
     <property name="VBR_SQLSERVER_ENGINE" value="0" />
 
@@ -35,18 +34,22 @@
       name="VBR_SQLSERVER_AUTHENTICATION"
       value="0" />
 
+    <property
+      name="VBR_ENTRAID_DATABASE_INSTALL"
+      value="0" />
+
     <!-- Ports -->
 
     <property name="VBRC_SERVICE_PORT" value="9393" />
     <property name="VBR_SERVICE_PORT" value="9392" />
-    <property name="VBR_SECURE_CONNECTIONS_PORT" value="9401" />
     <property name="VBR_RESTSERVICE_PORT" value="9419" />
+    <property name="VBR_REVERSE_PROXY_PORT" value="443" />
 
-    <!-- Data locations -->
+    <!-- Data Locations -->
 
     <property
       name="INSTALLDIR"
-      value="C:\Program Files\Veeam\Backup and Replication" />
+      value="C:\Program Files\Veeam" />
 
     <property
       name="VM_CATALOGPATH"
@@ -62,14 +65,17 @@
       name="VBR_CHECK_UPDATES"
       value="0" />
 
-    <!-- Optional plug-ins -->
+    <!-- Disable optional plug-ins -->
 
     <property name="AHV_INSTALL" value="0" />
     <property name="KVM_INSTALL" value="0" />
     <property name="PVE_INSTALL" value="0" />
+    <property name="SCP_INSTALL" value="0" />
+    <property name="HPE_INSTALL" value="0" />
+    <property name="XEN_INSTALL" value="0" />
+    <property name="UHAPI_INSTALL" value="0" />
     <property name="AWS_INSTALL" value="0" />
     <property name="AZURE_INSTALL" value="0" />
-    <property name="GCP_INSTALL" value="0" />
     <property name="KASTEN_INSTALL" value="0" />
 
     <!-- Reboot -->
