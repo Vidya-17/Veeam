@@ -1,0 +1,27 @@
+create path C:\VDK
+
+inventory -  physical and cloud infratsurute , create vdk , select path as this.
+in the path we should see files .
+
+copy entire folder brok server to target  . run as admin , installdeploymentkit (Windows batch file)
+
+verify if Veeam related services as there , also if the folder exists
+
+then on actual server ,
+ Inventory
+→ Physical and Cloud Infrastructure
+→ Add Group
+
+
+Create Protection Group
+→ Individual Computers - add group
+
+add computer step add host ip , connect using certificate-based authentication
+
+test now
+
+back to new protection group wizard, next ,options page next , apply , after rescan finish  - next -> finish 
+
+now in the server , under physical and cloud infrasructe , i should see he targe machine under protection group.
+
+home -> backuo job > windows computer > job name . target ( protection group) - select Veeam target - next . backup type entire computer  . right click job . active full
