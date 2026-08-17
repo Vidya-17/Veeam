@@ -136,7 +136,7 @@
 
 #   -------------------------------------------------
 
-  ---
+---
 - name: Install Veeam Backup and Replication
   hosts: all
   gather_facts: false
