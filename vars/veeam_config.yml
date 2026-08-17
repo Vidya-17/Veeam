@@ -58,6 +58,11 @@ vbr:
 
   repository: Default Backup Repository
 
+  install_user: Administrator
+
+use_interactive_become: true
+
+
 
 
 # all:
