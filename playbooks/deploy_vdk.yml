@@ -1,7 +1,8 @@
 ---
 # Step 1: Generate the Veeam Deployment Kit ON THE VBR SERVER.
-# This is the piece your original playbook was missing entirely — a VDK
-# doesn't exist until you generate it from the Veeam server console/PowerShell.
+# Confirmed available on your build (Veeam.Backup.PowerShell 13.1.0.411) —
+# the earlier "not recognized" error was just a session that hadn't
+# imported the module, not an edition restriction.
 - name: Generate Veeam Deployment Kit on Veeam server
   hosts: veeam_server
   gather_facts: false
@@ -121,4 +122,3 @@
           C:\VDK exists: {{ vdk_folder_check.stat.exists }}.
           Check vdk_service output above — you should see a
           "Veeam Deployer Service" (or similarly named) service as Running.
-
