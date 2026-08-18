@@ -60,6 +60,10 @@ vbr:
 
   install_user: Administrator
 
-use_interactive_become: true
+  vdk_export_path: C:\DeploymentKit
 
+  vdk_validity_hours: 8760
+
+
+use_interactive_become: true
 
