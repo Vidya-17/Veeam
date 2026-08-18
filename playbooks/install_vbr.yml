@@ -56,19 +56,6 @@
           pending — reboot the VM and re-run this play if the install fails.
       when: reboot_check.stdout | trim | length > 0
 
-    # -----------------------------------------------------------------
-    # THIS is the key fix for "permission denied checking for updates".
-    #
-    # Ansible/WinRM authenticates as a "network logon", and Veeam's
-    # installer refuses to run its pre-flight checks properly under a
-    # network logon (Access Denied on checks it needs a real local/
-    # interactive token for). We fix this two ways:
-    #   1. become: runas with logon_type=interactive gives the process a
-    #      genuine interactive token instead of a network-logon token.
-    #   2. /SkipNetworkLogonErrors on the command line as a fallback, in
-    #      case become isn't usable in your environment (e.g. gMSA,
-    #      restricted WinRM config).
-    # -----------------------------------------------------------------
     - name: Start Veeam Silent Installation
       ansible.windows.win_shell: |
         & "{{ vbr.silent_installer }}" `
@@ -138,8 +125,6 @@
       ansible.builtin.debug:
         var: veeam_service.stdout_lines
 
-    # Veeam's installer can legitimately return 3010 (success, reboot
-    # required) as well as 0 (success). Anything else is a real failure.
     - name: Fail if Veeam installation returned an error
       ansible.builtin.fail:
         msg: |
