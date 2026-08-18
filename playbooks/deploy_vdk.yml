@@ -1,4 +1,4 @@
-# ---
+---
 # # PLAY 1 - Generate VDK on Veeam Server
 
 # - name: Generate Veeam Deployment Kit on Veeam server
