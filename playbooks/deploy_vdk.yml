@@ -17,8 +17,9 @@
 
     - name: Generate Veeam Deployment Kit
       ansible.windows.win_shell: |
-        Import-Module Veeam.Backup.PowerShell
-        Generate-VBRBackupServerDeployerKit -ExportPath "{{ vbr.vdk_export_path }}" -AllPlatforms -ValidityPeriodInHours {{ vbr.vdk_validity_hours }}
+        & "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -Command "
+        Import-Module Veeam.Backup.PowerShell;
+        Generate-VBRBackupServerDeployerKit -ExportPath '{{ vbr.vdk_export_path }}' -AllPlatforms -ValidityPeriodInHours {{ vbr.vdk_validity_hours }}"
       register: vdk_generate
       failed_when: vdk_generate.rc != 0
 
