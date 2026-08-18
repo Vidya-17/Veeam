@@ -1,10 +1,53 @@
 ---
-- name: Run Veeam Backup Job
+- name: Run Windows Computer Backup Job (Active Full)
   hosts: veeam_server
   gather_facts: false
-
   vars_files:
     - ../vars/veeam_config.yml
+    - ../vars/targets.yml
 
-  roles:
-    - veeam_backup_run
+  tasks:
+    - name: Start backup job with an active full run
+      ansible.windows.win_shell: |
+        Import-Module Veeam.Backup.PowerShell
+        $job = Get-VBRComputerBackupJob -Name "{{ item.backup_job.name }}"
+
+        # Computer/Agent backup jobs use Start-VBRComputerBackupJob, NOT
+        # Start-VBRJob (that cmdlet is for VM backup/replication jobs).
+        # -FullBackup forces an Active Full run (matches "right-click job ->
+        # Active Full" in the console). If this exact parameter name
+        # doesn't match your installed build, confirm with:
+        #   Get-Help Start-VBRComputerBackupJob -Full
+        Start-VBRComputerBackupJob -Job $job -FullBackup
+
+        Write-Output "Active full backup started for {{ item.backup_job.name }}"
+      loop: "{{ targets }}"
+      loop_control:
+        label: "{{ item.hostname }}"
+      when: item.backup_job.run_after_create | default(false)
+      register: job_start
+      failed_when: false
+
+    - name: Display job start output
+      ansible.builtin.debug:
+        var: job_start.results | map(attribute='stdout_lines') | list
+
+    - name: Display job start errors (if any)
+      ansible.builtin.debug:
+        var: job_start.results | map(attribute='stderr_lines') | list
+      when: job_start.results | selectattr('stderr', 'defined') | selectattr('stderr', 'ne', '') | list | length > 0
+
+    - name: Check current job session status
+      ansible.windows.win_shell: |
+        Import-Module Veeam.Backup.PowerShell
+        Get-VBRBackupSession | Where-Object { $_.JobName -eq "{{ item.backup_job.name }}" } |
+          Sort-Object CreationTime -Descending | Select-Object -First 1 |
+          Select-Object JobName, State, Result, Progress
+      loop: "{{ targets }}"
+      loop_control:
+        label: "{{ item.hostname }}"
+      register: job_status
+
+    - name: Display job session status
+      ansible.builtin.debug:
+        var: job_status.results | map(attribute='stdout_lines') | list
