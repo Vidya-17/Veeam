@@ -1,5 +1,5 @@
 ---
-# Step 1: Generate the Veeam Deployment Kit ON THE VBR SERVER
+# PLAY 1 - Generate VDK on Veeam Server
 
 - name: Generate Veeam Deployment Kit on Veeam server
   hosts: veeam_server
@@ -37,26 +37,6 @@
           -ExecutionPolicy Bypass `
           -File C:\Temp\generate_vdk.ps1
       register: vdk_generate
-      failed_when: vdk_generate.rc != 0
-
-    - name: Display VDK generation output
-      ansible.builtin.debug:
-        var: vdk_generate.stdout_lines
-
-    - name: Display VDK generation errors
-      ansible.builtin.debug:
-        var: vdk_generate.stderr_lines
-      when: vdk_generate.stderr | default('') | length > 0
-
-    - name: Show generated VDK files
-      ansible.windows.win_shell: |
-        Get-ChildItem "{{ vbr.vdk_export_path }}" -Recurse |
-          Select-Object FullName
-      register: vdk_files
-
-    - name: Display generated VDK files
-      ansible.builtin.debug:
-        var: vdk_files.stdout_lines
 
     - name: Create ZIP archive of generated VDK
       ansible.windows.win_shell: |
@@ -64,10 +44,77 @@
           -Path "{{ vbr.vdk_export_path }}\*" `
           -DestinationPath "{{ vbr.vdk_export_path }}.zip" `
           -Force
-      register: vdk_zip
 
-    - name: Fetch the zipped VDK to the Ansible controller
+    - name: Fetch the zipped VDK to the controller
       ansible.builtin.fetch:
         src: "{{ vbr.vdk_export_path }}.zip"
         dest: "./staging/vdk_kit.zip"
         flat: true
+
+    - name: Create VDK directory on target
+      ansible.windows.win_file:
+        path: C:\VDK
+        state: directory
+
+    - name: Copy zipped VDK package to target
+      ansible.windows.win_copy:
+        src: "./staging/vdk_kit.zip"
+        dest: C:\VDK\vdk_kit.zip
+
+    - name: Extract VDK package on target
+      ansible.windows.win_shell: |
+        Expand-Archive `
+          -Path C:\VDK\vdk_kit.zip `
+          -DestinationPath C:\VDK `
+          -Force
+
+    - name: List extracted VDK files
+      ansible.windows.win_shell: |
+        Get-ChildItem C:\VDK -Recurse |
+          Select-Object FullName
+      register: vdk_contents
+
+    - name: Display extracted files
+      ansible.builtin.debug:
+        var: vdk_contents.stdout_lines
+
+    - name: Verify InstallDeploymentKit.bat exists
+      ansible.windows.win_stat:
+        path: C:\VDK\InstallDeploymentKit.bat
+      register: vdk_installer
+
+    - name: Fail if installer missing
+      ansible.builtin.fail:
+        msg: "InstallDeploymentKit.bat not found in C:\\VDK"
+      when: not vdk_installer.stat.exists
+
+    - name: Run Veeam Deployment Kit installer
+      ansible.windows.win_shell: |
+        .\InstallDeploymentKit.bat
+      args:
+        chdir: C:\VDK
+      become: true
+      become_method: runas
+      become_user: "{{ vbr.install_user }}"
+      become_flags: logon_type=interactive logon_flags=with_profile
+      register: vdk_install
+      failed_when: false
+
+    - name: Display installer output
+      ansible.builtin.debug:
+        var: vdk_install.stdout_lines
+
+    - name: Display installer errors
+      ansible.builtin.debug:
+        var: vdk_install.stderr_lines
+      when: vdk_install.stderr | default('') | length > 0
+
+    - name: Verify Veeam services on target
+      ansible.windows.win_shell: |
+        Get-Service *Veeam* -ErrorAction SilentlyContinue |
+          Select-Object Name, Status
+      register: vdk_service
+
+    - name: Display Veeam services
+      ansible.builtin.debug:
+        var: vdk_service.stdout_lines
