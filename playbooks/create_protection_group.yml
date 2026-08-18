@@ -1,10 +1,70 @@
 ---
-- name: Create Veeam Protection Group
+- name: Create Protection Group for Individual Computers
   hosts: veeam_server
   gather_facts: false
-
   vars_files:
     - ../vars/veeam_config.yml
+    - ../vars/targets.yml
 
-  roles:
-    - veeam_protection_group
+  tasks:
+    - name: Create protection group for each target
+      ansible.windows.win_shell: |
+        Import-Module Veeam.Backup.PowerShell
+
+        $existing = Get-VBRProtectionGroup -Name "{{ item.protection_group.name }}" -ErrorAction SilentlyContinue
+        if ($existing) {
+          Write-Output "Protection group '{{ item.protection_group.name }}' already exists — skipping creation."
+          exit 0
+        }
+
+        # Certificate-based auth for the target computer (matches your
+        # console workflow: Add Group -> Individual Computers -> add host,
+        # certificate-based authentication).
+        $cred = New-VBRIndividualComputerCustomCredentials `
+          -HostName "{{ item.ip_address }}" `
+          -UseTemporaryCertificate
+
+        $container = New-VBRIndividualComputerContainer -CustomCredentials $cred
+
+        Add-VBRProtectionGroup `
+          -Name "{{ item.protection_group.name }}" `
+          -Container $container
+
+        Write-Output "Protection group '{{ item.protection_group.name }}' created."
+      loop: "{{ targets }}"
+      loop_control:
+        label: "{{ item.hostname }}"
+      register: pg_create
+      failed_when: pg_create.rc != 0
+
+    - name: Display protection group creation output
+      ansible.builtin.debug:
+        var: pg_create.results | map(attribute='stdout_lines') | list
+
+    # Equivalent to clicking "Test Now" in the wizard.
+    - name: Rescan protection group to discover/validate the computer
+      ansible.windows.win_shell: |
+        Import-Module Veeam.Backup.PowerShell
+        $group = Get-VBRProtectionGroup -Name "{{ item.protection_group.name }}"
+        Rescan-VBREntity -Entity $group
+        Write-Output "Rescan triggered for {{ item.protection_group.name }}"
+      loop: "{{ targets }}"
+      loop_control:
+        label: "{{ item.hostname }}"
+      register: pg_rescan
+      failed_when: false
+
+    - name: Display rescan output
+      ansible.builtin.debug:
+        var: pg_rescan.results | map(attribute='stdout_lines') | list
+
+    - name: Confirm protection groups exist
+      ansible.windows.win_shell: |
+        Import-Module Veeam.Backup.PowerShell
+        Get-VBRProtectionGroup | Select-Object Name, Type
+      register: pg_confirm
+
+    - name: Display all protection groups on the server
+      ansible.builtin.debug:
+        var: pg_confirm.stdout_lines
+
