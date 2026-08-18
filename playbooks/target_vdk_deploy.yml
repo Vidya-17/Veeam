@@ -14,10 +14,10 @@
         path: C:\VDK
         state: directory
 
-    - name: Copy zipped VDK package to target
-      ansible.windows.win_copy:
-        src: "./staging/vdk_kit.zip"
-        dest: C:\VDK\vdk_kit.zip
+    - name: Copy VDK zip from VBR server share
+      ansible.windows.win_shell: |
+        Copy-Item "\\WIN-2JS87DVNUFR\DeploymentKit\DeploymentKit.zip" `
+          "C:\VDK\vdk_kit.zip" -Force
 
     - name: Extract VDK package on target
       ansible.windows.win_shell: |
