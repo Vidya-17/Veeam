@@ -125,6 +125,3 @@
           Select-Object Name, Status
       register: vdk_service
 
-    - name: Display Veeam services
-      ansible.builtin.debug:
-        var: vdk_service.stdout_lines
