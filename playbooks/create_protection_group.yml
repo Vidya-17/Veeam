@@ -60,8 +60,11 @@
 
     - name: Confirm protection groups exist
       ansible.windows.win_shell: |
-        Import-Module Veeam.Backup.PowerShell
-        Get-VBRProtectionGroup | Select-Object Name, Type
+        & "C:\Program Files\PowerShell\7\pwsh.exe" `
+          -NoProfile `
+          -Command "
+            Import-Module Veeam.Backup.PowerShell;
+            Get-VBRProtectionGroup | Select-Object Name, Type"
       register: pg_confirm
 
     - name: Display all protection groups on the server
