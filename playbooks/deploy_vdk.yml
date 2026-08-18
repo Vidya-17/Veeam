@@ -1,102 +1,102 @@
----
-# PLAY 1 - Generate VDK on Veeam Server
+# ---
+# # PLAY 1 - Generate VDK on Veeam Server
 
-- name: Generate Veeam Deployment Kit on Veeam server
-  hosts: veeam_server
-  gather_facts: false
-  vars_files:
-    - ../vars/veeam_config.yml
+# - name: Generate Veeam Deployment Kit on Veeam server
+#   hosts: veeam_server
+#   gather_facts: false
+#   vars_files:
+#     - ../vars/veeam_config.yml
 
-  tasks:
+#   tasks:
 
-    - name: Create export folder for VDK on VBR server
-      ansible.windows.win_file:
-        path: "{{ vbr.vdk_export_path }}"
-        state: directory
+#     - name: Create export folder for VDK on VBR server
+#       ansible.windows.win_file:
+#         path: "{{ vbr.vdk_export_path }}"
+#         state: directory
 
-    - name: Ensure Veeam Reverse Proxy Service is running
-      ansible.windows.win_service:
-        name: VeeamReverseProxySvc
-        state: started
+#     - name: Ensure Veeam Reverse Proxy Service is running
+#       ansible.windows.win_service:
+#         name: VeeamReverseProxySvc
+#         state: started
 
-    - name: Create PowerShell script for VDK generation
-      ansible.windows.win_copy:
-        dest: C:\Temp\generate_vdk.ps1
-        content: |
-          Import-Module Veeam.Backup.PowerShell
+#     - name: Create PowerShell script for VDK generation
+#       ansible.windows.win_copy:
+#         dest: C:\Temp\generate_vdk.ps1
+#         content: |
+#           Import-Module Veeam.Backup.PowerShell
 
-          Generate-VBRBackupServerDeployerKit `
-            -ExportPath "{{ vbr.vdk_export_path }}" `
-            -AllPlatforms `
-            -ValidityPeriodInHours {{ vbr.vdk_validity_hours }}
+#           Generate-VBRBackupServerDeployerKit `
+#             -ExportPath "{{ vbr.vdk_export_path }}" `
+#             -AllPlatforms `
+#             -ValidityPeriodInHours {{ vbr.vdk_validity_hours }}
 
-    - name: Generate Veeam Deployment Kit
-      ansible.windows.win_shell: |
-        & "C:\Program Files\PowerShell\7\pwsh.exe" `
-          -NoProfile `
-          -ExecutionPolicy Bypass `
-          -File C:\Temp\generate_vdk.ps1
-      register: vdk_generate
+#     - name: Generate Veeam Deployment Kit
+#       ansible.windows.win_shell: |
+#         & "C:\Program Files\PowerShell\7\pwsh.exe" `
+#           -NoProfile `
+#           -ExecutionPolicy Bypass `
+#           -File C:\Temp\generate_vdk.ps1
+#       register: vdk_generate
 
-    - name: Create ZIP archive of generated VDK
-      ansible.windows.win_shell: |
-        Compress-Archive `
-          -Path "{{ vbr.vdk_export_path }}\*" `
-          -DestinationPath "{{ vbr.vdk_export_path }}.zip" `
-          -Force
+#     - name: Create ZIP archive of generated VDK
+#       ansible.windows.win_shell: |
+#         Compress-Archive `
+#           -Path "{{ vbr.vdk_export_path }}\*" `
+#           -DestinationPath "{{ vbr.vdk_export_path }}.zip" `
+#           -Force
 
-    - name: Fetch the zipped VDK to the controller
-      ansible.builtin.fetch:
-        src: "{{ vbr.vdk_export_path }}.zip"
-        dest: "./staging/vdk_kit.zip"
-        flat: true
+#     - name: Fetch the zipped VDK to the controller
+#       ansible.builtin.fetch:
+#         src: "{{ vbr.vdk_export_path }}.zip"
+#         dest: "./staging/vdk_kit.zip"
+#         flat: true
 
-# PLAY 2 - Deploy VDK to Target
+# # PLAY 2 - Deploy VDK to Target
 
-- name: Deploy Veeam Deployment Kit to target machine
-  hosts: targets
-  gather_facts: false
-  vars_files:
-    - ../vars/veeam_config.yml
+# - name: Deploy Veeam Deployment Kit to target machine
+#   hosts: targets
+#   gather_facts: false
+#   vars_files:
+#     - ../vars/veeam_config.yml
 
-  tasks:
+#   tasks:
 
-    - name: Create VDK directory on target
-      ansible.windows.win_file:
-        path: C:\VDK
-        state: directory
+#     - name: Create VDK directory on target
+#       ansible.windows.win_file:
+#         path: C:\VDK
+#         state: directory
 
-    - name: Copy zipped VDK package to target
-      ansible.windows.win_copy:
-        src: "./staging/vdk_kit.zip"
-        dest: C:\VDK\vdk_kit.zip
+#     - name: Copy zipped VDK package to target
+#       ansible.windows.win_copy:
+#         src: "./staging/vdk_kit.zip"
+#         dest: C:\VDK\vdk_kit.zip
 
-    - name: Extract VDK package on target
-      ansible.windows.win_shell: |
-        Expand-Archive `
-          -Path C:\VDK\vdk_kit.zip `
-          -DestinationPath C:\VDK `
-          -Force
+    # - name: Extract VDK package on target
+    #   ansible.windows.win_shell: |
+    #     Expand-Archive `
+    #       -Path C:\VDK\vdk_kit.zip `
+    #       -DestinationPath C:\VDK `
+    #       -Force
 
-    - name: List extracted VDK files
-      ansible.windows.win_shell: |
-        Get-ChildItem C:\VDK -Recurse |
-          Select-Object FullName
-      register: vdk_contents
+    # - name: List extracted VDK files
+    #   ansible.windows.win_shell: |
+    #     Get-ChildItem C:\VDK -Recurse |
+    #       Select-Object FullName
+    #   register: vdk_contents
 
-    - name: Display extracted files
-      ansible.builtin.debug:
-        var: vdk_contents.stdout_lines
+    # - name: Display extracted files
+    #   ansible.builtin.debug:
+    #     var: vdk_contents.stdout_lines
 
-    - name: Verify InstallDeploymentKit.bat exists
-      ansible.windows.win_stat:
-        path: C:\VDK\InstallDeploymentKit.bat
-      register: vdk_installer
+    # - name: Verify InstallDeploymentKit.bat exists
+    #   ansible.windows.win_stat:
+    #     path: C:\VDK\InstallDeploymentKit.bat
+    #   register: vdk_installer
 
-    - name: Fail if installer missing
-      ansible.builtin.fail:
-        msg: "InstallDeploymentKit.bat not found in C:\\VDK"
-      when: not vdk_installer.stat.exists
+    # - name: Fail if installer missing
+    #   ansible.builtin.fail:
+    #     msg: "InstallDeploymentKit.bat not found in C:\\VDK"
+    #   when: not vdk_installer.stat.exists
 
     - name: Run Veeam Deployment Kit installer
       ansible.windows.win_shell: |
