@@ -51,6 +51,16 @@
         dest: "./staging/vdk_kit.zip"
         flat: true
 
+# PLAY 2 - Deploy VDK to Target
+
+- name: Deploy Veeam Deployment Kit to target machine
+  hosts: targets
+  gather_facts: false
+  vars_files:
+    - ../vars/veeam_config.yml
+
+  tasks:
+
     - name: Create VDK directory on target
       ansible.windows.win_file:
         path: C:\VDK
