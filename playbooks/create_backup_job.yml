@@ -7,29 +7,33 @@
     - ../vars/targets.yml
 
   tasks:
+
     - name: Create backup job for each target's protection group
       ansible.windows.win_shell: |
-        Import-Module Veeam.Backup.PowerShell
+        & "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -Command "
+        Import-Module Veeam.Backup.PowerShell;
 
-        $existing = Get-VBRComputerBackupJob -Name "{{ item.backup_job.name }}" -ErrorAction SilentlyContinue
-        if ($existing) {
-          Write-Output "Backup job '{{ item.backup_job.name }}' already exists — skipping creation."
+        \$existing = Get-VBRComputerBackupJob -Name '{{ item.backup_job.name }}' -ErrorAction SilentlyContinue
+
+        if (\$existing) {
+          Write-Output 'Backup job already exists'
           exit 0
         }
 
-        $group = Get-VBRProtectionGroup -Name "{{ item.protection_group.name }}"
-        $repo  = Get-VBRBackupRepository -Name "{{ item.backup_job.repository }}"
+        \$group = Get-VBRProtectionGroup -Name '{{ item.protection_group.name }}'
+        \$repo  = Get-VBRBackupRepository -Name '{{ item.backup_job.repository }}'
 
         Add-VBRComputerBackupJob `
-          -Name "{{ item.backup_job.name }}" `
+          -Name '{{ item.backup_job.name }}' `
           -OSPlatform Windows `
           -Type Server `
           -Mode ManagedByBackupServer `
-          -BackupObject $group `
+          -BackupObject \$group `
           -BackupType EntireComputer `
-          -BackupRepository $repo
+          -BackupRepository \$repo
 
-        Write-Output "Backup job '{{ item.backup_job.name }}' created."
+        Write-Output 'Backup job created'
+        "
       loop: "{{ targets }}"
       loop_control:
         label: "{{ item.hostname }}"
@@ -40,13 +44,17 @@
       ansible.builtin.debug:
         var: job_create.results | map(attribute='stdout_lines') | list
 
-    # Enable application-aware processing (VSS) if requested in targets.yml.
     - name: Enable application-aware processing where requested
       ansible.windows.win_shell: |
-        Import-Module Veeam.Backup.PowerShell
-        $job = Get-VBRComputerBackupJob -Name "{{ item.backup_job.name }}"
-        Enable-VBRJobVSSIntegration -Job $job
-        Write-Output "VSS integration enabled for {{ item.backup_job.name }}"
+        & "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -Command "
+        Import-Module Veeam.Backup.PowerShell;
+
+        \$job = Get-VBRComputerBackupJob -Name '{{ item.backup_job.name }}'
+
+        Enable-VBRJobVSSIntegration -Job \$job
+
+        Write-Output 'VSS integration enabled'
+        "
       loop: "{{ targets }}"
       loop_control:
         label: "{{ item.hostname }}"
@@ -54,18 +62,9 @@
       register: vss_enable
       failed_when: false
 
-    - name: Set retention (retention_days) on each job
+    - name: Set retention note
       ansible.windows.win_shell: |
-        Import-Module Veeam.Backup.PowerShell
-        $job = Get-VBRComputerBackupJob -Name "{{ item.backup_job.name }}"
-        # Note: for Computer Backup Jobs, retention is generally set in
-        # restore points rather than days directly. If your job requires a
-        # days-based retention policy specifically, verify the exact cmdlet
-        # for your build with:
-        #   Get-Help Set-VBRJobOptions -Full
-        # since retention configuration differs between VM jobs and agent
-        # (computer) jobs.
-        Write-Output "Retention step is a placeholder — verify exact cmdlet for computer jobs on your build."
+        Write-Output "Retention step requires validation on this VBR build."
       loop: "{{ targets }}"
       loop_control:
         label: "{{ item.hostname }}"
@@ -73,11 +72,14 @@
 
     - name: Confirm backup jobs exist
       ansible.windows.win_shell: |
-        Import-Module Veeam.Backup.PowerShell
-        Get-VBRComputerBackupJob | Select-Object Name, Type
+        & "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -Command "
+        Import-Module Veeam.Backup.PowerShell;
+
+        Get-VBRComputerBackupJob |
+          Select-Object Name, Type
+        "
       register: job_confirm
 
     - name: Display all computer backup jobs on the server
       ansible.builtin.debug:
         var: job_confirm.stdout_lines
-
