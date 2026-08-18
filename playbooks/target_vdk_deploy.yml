@@ -1,5 +1,6 @@
 ---
 # Step 2: Push the VDK to the target machine and install it there.
+
 - name: Deploy Veeam Deployment Kit to target machine
   hosts: targets
   gather_facts: false
@@ -7,6 +8,7 @@
     - ../vars/veeam_config.yml
 
   tasks:
+
     - name: Create VDK directory on target
       ansible.windows.win_file:
         path: C:\VDK
@@ -19,8 +21,21 @@
 
     - name: Extract VDK package on target
       ansible.windows.win_shell: |
-        Expand-Archive -Path C:\VDK\vdk_kit.zip -DestinationPath C:\VDK -Force
+        Expand-Archive `
+          -Path C:\VDK\vdk_kit.zip `
+          -DestinationPath C:\VDK `
+          -Force
       register: vdk_extract
+
+    - name: List extracted VDK files
+      ansible.windows.win_shell: |
+        Get-ChildItem C:\VDK -Recurse |
+          Select-Object FullName
+      register: vdk_contents
+
+    - name: Display extracted VDK files
+      ansible.builtin.debug:
+        var: vdk_contents.stdout_lines
 
     - name: Verify InstallDeploymentKit.bat exists
       ansible.windows.win_stat:
@@ -29,15 +44,12 @@
 
     - name: Fail if InstallDeploymentKit.bat missing
       ansible.builtin.fail:
-        msg: "InstallDeploymentKit.bat not found in C:\\VDK — check the VDK export/zip step."
+        msg: "InstallDeploymentKit.bat not found in C:\\VDK"
       when: not vdk_installer.stat.exists
 
-    # Same interactive-logon fix as the VBR install: the .bat installs a
-    # service and touches things that can fail under a plain WinRM network
-    # logon, so run it with a real local-admin token.
     - name: Run Veeam Deployment Kit installer (as admin)
       ansible.windows.win_shell: |
-        C:\VDK\InstallDeploymentKit.bat
+        .\InstallDeploymentKit.bat
       args:
         chdir: C:\VDK
       become: true
@@ -51,21 +63,22 @@
       ansible.builtin.debug:
         var: vdk_install.stdout_lines
 
-    - name: Display VDK installation errors (if any)
+    - name: Display VDK installation errors
       ansible.builtin.debug:
         var: vdk_install.stderr_lines
       when: vdk_install.stderr | default('') | length > 0
 
-    - name: Verify Veeam Deployer service is running
+    - name: Verify Veeam services on target
       ansible.windows.win_shell: |
-        Get-Service *Veeam* -ErrorAction SilentlyContinue | Select-Object Name, Status
+        Get-Service *Veeam* -ErrorAction SilentlyContinue |
+          Select-Object Name, Status
       register: vdk_service
 
     - name: Display Veeam-related services on target
       ansible.builtin.debug:
         var: vdk_service.stdout_lines
 
-    - name: Confirm C:\VDK folder exists with files
+    - name: Confirm C:\VDK folder exists
       ansible.windows.win_stat:
         path: C:\VDK
       register: vdk_folder_check
@@ -74,5 +87,4 @@
       ansible.builtin.debug:
         msg: >
           C:\VDK exists: {{ vdk_folder_check.stat.exists }}.
-          Check vdk_service output above — you should see a
-          "Veeam Deployer Service" (or similarly named) service as Running.
+          Review the Veeam service output above.
