@@ -7,20 +7,40 @@
     - ../vars/targets.yml
 
   tasks:
-    - name: Start backup job with an active full run
+    - name: Create start-job script
+      ansible.windows.win_copy:
+        dest: "C:\\Temp\\start_job_{{ item.hostname }}.ps1"
+        content: |
+          $ErrorActionPreference = 'Stop'
+          try {
+            Import-Module Veeam.Backup.PowerShell
+            $job = Get-VBRComputerBackupJob -Name "{{ item.backup_job.name }}" -ErrorAction Stop
+
+            # -FullBackup forces an Active Full run. If this parameter name
+            # doesn't match your build, run:
+            #   & "C:\Program Files\PowerShell\7\pwsh.exe" -Command "Import-Module Veeam.Backup.PowerShell; Get-Help Start-VBRComputerBackupJob -Full"
+            # on the VBR server to confirm the exact switch name.
+            Start-VBRComputerBackupJob -Job $job -FullBackup
+
+            Write-Output "Active full backup started"
+            exit 0
+          }
+          catch {
+            Write-Error "FAILED: $($_.Exception.Message)"
+            Write-Error "$($_.ScriptStackTrace)"
+            exit 1
+          }
+      loop: "{{ targets }}"
+      loop_control:
+        label: "{{ item.hostname }}"
+      when: item.backup_job.run_after_create | default(false)
+
+    - name: Run start-job script (PowerShell 7 required for v13 module)
       ansible.windows.win_shell: |
-        Import-Module Veeam.Backup.PowerShell
-        $job = Get-VBRComputerBackupJob -Name "{{ item.backup_job.name }}"
-
-        # Computer/Agent backup jobs use Start-VBRComputerBackupJob, NOT
-        # Start-VBRJob (that cmdlet is for VM backup/replication jobs).
-        # -FullBackup forces an Active Full run (matches "right-click job ->
-        # Active Full" in the console). If this exact parameter name
-        # doesn't match your installed build, confirm with:
-        #   Get-Help Start-VBRComputerBackupJob -Full
-        Start-VBRComputerBackupJob -Job $job -FullBackup
-
-        Write-Output "Active full backup started for {{ item.backup_job.name }}"
+        & "C:\Program Files\PowerShell\7\pwsh.exe" `
+          -NoProfile `
+          -ExecutionPolicy Bypass `
+          -File "C:\Temp\start_job_{{ item.hostname }}.ps1"
       loop: "{{ targets }}"
       loop_control:
         label: "{{ item.hostname }}"
@@ -28,21 +48,21 @@
       register: job_start
       failed_when: false
 
-    - name: Display job start output
+    - name: Display job start stdout
       ansible.builtin.debug:
         var: job_start.results | map(attribute='stdout_lines') | list
+      when: job_start.results is defined
 
-    - name: Display job start errors (if any)
+    - name: Display job start stderr
       ansible.builtin.debug:
         var: job_start.results | map(attribute='stderr_lines') | list
-      when: job_start.results | selectattr('stderr', 'defined') | selectattr('stderr', 'ne', '') | list | length > 0
+      when: job_start.results is defined
 
     - name: Check current job session status
       ansible.windows.win_shell: |
-        Import-Module Veeam.Backup.PowerShell
-        Get-VBRBackupSession | Where-Object { $_.JobName -eq "{{ item.backup_job.name }}" } |
-          Sort-Object CreationTime -Descending | Select-Object -First 1 |
-          Select-Object JobName, State, Result, Progress
+        & "C:\Program Files\PowerShell\7\pwsh.exe" `
+          -NoProfile `
+          -Command "Import-Module Veeam.Backup.PowerShell; Get-VBRBackupSession | Where-Object { `$_.JobName -eq '{{ item.backup_job.name }}' } | Sort-Object CreationTime -Descending | Select-Object -First 1 | Select-Object JobName, State, Result, Progress"
       loop: "{{ targets }}"
       loop_control:
         label: "{{ item.hostname }}"
