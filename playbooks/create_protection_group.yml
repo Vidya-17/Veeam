@@ -45,10 +45,6 @@
       loop_control:
         label: "{{ item.hostname }}"
 
-    # NOTE: filename is now unique per target (create_pg_<hostname>.ps1)
-    # instead of a fixed name — your original overwrote the same file on
-    # every loop iteration, which is harmless with one target but will
-    # silently clobber earlier targets' scripts the moment you add a second.
     - name: Create protection group for each target
       ansible.windows.win_shell: |
         & "C:\Program Files\PowerShell\7\pwsh.exe" `
@@ -65,8 +61,6 @@
       ansible.builtin.debug:
         var: pg_create.results | map(attribute='stdout_lines') | list
 
-    # This is the line your original playbook was missing — the actual
-    # error text was likely landing here the whole time.
     - name: Display protection group creation stderr
       ansible.builtin.debug:
         var: pg_create.results | map(attribute='stderr_lines') | list
