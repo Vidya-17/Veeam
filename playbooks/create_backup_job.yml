@@ -7,54 +7,92 @@
     - ../vars/targets.yml
 
   tasks:
+    - name: Create backup job script
+      ansible.windows.win_copy:
+        dest: "C:\\Temp\\create_job_{{ item.hostname }}.ps1"
+        content: |
+          $ErrorActionPreference = 'Stop'
+          try {
+            Import-Module Veeam.Backup.PowerShell
 
-    - name: Create backup job for each target's protection group
+            $existing = Get-VBRComputerBackupJob -Name "{{ item.backup_job.name }}" -ErrorAction SilentlyContinue
+            if ($existing) {
+              Write-Output "Backup job already exists"
+              exit 0
+            }
+
+            $group = Get-VBRProtectionGroup -Name "{{ item.protection_group.name }}" -ErrorAction Stop
+            $repo  = Get-VBRBackupRepository -Name "{{ item.backup_job.repository }}" -ErrorAction Stop
+
+            $job = Add-VBRComputerBackupJob `
+              -Name "{{ item.backup_job.name }}" `
+              -OSPlatform Windows `
+              -Type Server `
+              -Mode ManagedByBackupServer `
+              -BackupObject $group `
+              -BackupType EntireComputer `
+              -BackupRepository $repo
+
+            $job | Format-List *
+            Write-Output "Backup job created"
+            exit 0
+          }
+          catch {
+            Write-Error "FAILED: $($_.Exception.Message)"
+            Write-Error "$($_.ScriptStackTrace)"
+            exit 1
+          }
+      loop: "{{ targets }}"
+      loop_control:
+        label: "{{ item.hostname }}"
+
+    - name: Run backup job creation script
       ansible.windows.win_shell: |
-        & "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -Command "
-        Import-Module Veeam.Backup.PowerShell;
-
-        \$existing = Get-VBRComputerBackupJob -Name '{{ item.backup_job.name }}' -ErrorAction SilentlyContinue
-
-        if (\$existing) {
-          Write-Output 'Backup job already exists'
-          exit 0
-        }
-
-        \$group = Get-VBRProtectionGroup -Name '{{ item.protection_group.name }}'
-        \$repo  = Get-VBRBackupRepository -Name '{{ item.backup_job.repository }}'
-
-        Add-VBRComputerBackupJob `
-          -Name '{{ item.backup_job.name }}' `
-          -OSPlatform Windows `
-          -Type Server `
-          -Mode ManagedByBackupServer `
-          -BackupObject \$group `
-          -BackupType EntireComputer `
-          -BackupRepository \$repo
-
-        Write-Output 'Backup job created'
-        "
+        & "C:\Program Files\PowerShell\7\pwsh.exe" `
+          -NoProfile `
+          -ExecutionPolicy Bypass `
+          -File "C:\Temp\create_job_{{ item.hostname }}.ps1"
       loop: "{{ targets }}"
       loop_control:
         label: "{{ item.hostname }}"
       register: job_create
       failed_when: job_create.rc != 0
 
-    - name: Display backup job creation output
+    - name: Display backup job creation stdout
       ansible.builtin.debug:
         var: job_create.results | map(attribute='stdout_lines') | list
 
+    - name: Display backup job creation stderr
+      ansible.builtin.debug:
+        var: job_create.results | map(attribute='stderr_lines') | list
+
+    - name: Create VSS-enable script
+      ansible.windows.win_copy:
+        dest: "C:\\Temp\\enable_vss_{{ item.hostname }}.ps1"
+        content: |
+          $ErrorActionPreference = 'Stop'
+          try {
+            Import-Module Veeam.Backup.PowerShell
+            $job = Get-VBRComputerBackupJob -Name "{{ item.backup_job.name }}" -ErrorAction Stop
+            Enable-VBRJobVSSIntegration -Job $job
+            Write-Output "VSS integration enabled"
+            exit 0
+          }
+          catch {
+            Write-Error "FAILED: $($_.Exception.Message)"
+            exit 1
+          }
+      loop: "{{ targets }}"
+      loop_control:
+        label: "{{ item.hostname }}"
+      when: item.backup_job.application_aware_processing | default(false)
+
     - name: Enable application-aware processing where requested
       ansible.windows.win_shell: |
-        & "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -Command "
-        Import-Module Veeam.Backup.PowerShell;
-
-        \$job = Get-VBRComputerBackupJob -Name '{{ item.backup_job.name }}'
-
-        Enable-VBRJobVSSIntegration -Job \$job
-
-        Write-Output 'VSS integration enabled'
-        "
+        & "C:\Program Files\PowerShell\7\pwsh.exe" `
+          -NoProfile `
+          -ExecutionPolicy Bypass `
+          -File "C:\Temp\enable_vss_{{ item.hostname }}.ps1"
       loop: "{{ targets }}"
       loop_control:
         label: "{{ item.hostname }}"
@@ -62,22 +100,18 @@
       register: vss_enable
       failed_when: false
 
-    - name: Set retention note
-      ansible.windows.win_shell: |
-        Write-Output "Retention step requires validation on this VBR build."
-      loop: "{{ targets }}"
-      loop_control:
-        label: "{{ item.hostname }}"
-      register: retention_note
+    - name: Display VSS-enable stdout/stderr
+      ansible.builtin.debug:
+        msg:
+          stdout: "{{ vss_enable.results | map(attribute='stdout_lines') | list }}"
+          stderr: "{{ vss_enable.results | map(attribute='stderr_lines') | list }}"
+      when: vss_enable.results is defined
 
     - name: Confirm backup jobs exist
       ansible.windows.win_shell: |
-        & "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -Command "
-        Import-Module Veeam.Backup.PowerShell;
-
-        Get-VBRComputerBackupJob |
-          Select-Object Name, Type
-        "
+        & "C:\Program Files\PowerShell\7\pwsh.exe" `
+          -NoProfile `
+          -Command "Import-Module Veeam.Backup.PowerShell; Get-VBRComputerBackupJob | Select-Object Name, Type, BackupObject"
       register: job_confirm
 
     - name: Display all computer backup jobs on the server
