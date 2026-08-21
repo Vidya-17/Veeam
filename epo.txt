@@ -1,0 +1,523 @@
+Day 1 Manual Procedure
+Step 1: Login to AD Server
+
+Collect:
+
+PowerShell
+1
+hostname
+2
+ipconfig /all
+3
+echo %USERDOMAIN%
+Show more lines
+
+Write down:
+
+Plain Text
+1
+Domain Name
+2
+DC Hostname
+3
+DC IP Address
+Show more lines
+
+Example:
+
+Plain Text
+1
+Domain : yokolab.local
+2
+DC : dc01
+3
+IP : 192.168.1.10
+Show more lines
+Step 2: Build New Windows Server VM
+
+Create:
+
+Plain Text
+1
+Windows Server 2022
+2
+4 vCPU
+3
+16 GB RAM
+4
+100 GB Disk
+Show more lines
+
+Hostname:
+
+Plain Text
+1
+epo01
+Show more lines
+Step 3: Configure Network on ePO VM
+
+Set:
+
+Plain Text
+1
+Static IP
+Show more lines
+
+Example:
+
+Plain Text
+1
+192.168.1.20
+Show more lines
+
+Important:
+
+Plain Text
+1
+Preferred DNS
+2
+=
+3
+AD Server IP
+Show more lines
+
+Example:
+
+Plain Text
+1
+192.168.1.10
+Show more lines
+
+Do NOT use:
+
+Plain Text
+1
+8.8.8.8
+Show more lines
+
+or
+
+Plain Text
+1
+1.1.1.1
+Show more lines
+Step 4: Verify DNS Resolution
+
+From ePO VM:
+
+PowerShell
+1
+ping <DC-Hostname>
+Show more lines
+
+Example:
+
+PowerShell
+1
+ping dc01
+Show more lines
+
+Then:
+
+PowerShell
+1
+nslookup <your-domain>
+Show more lines
+
+Example:
+
+PowerShell
+1
+nslookup yokolab.local
+Show more lines
+
+Must resolve successfully.
+
+Step 5: Join ePO Server to Domain
+
+Open:
+
+Plain Text
+1
+Server Manager
+2
+→ Local Server
+3
+→ Workgroup
+4
+→ Change
+5
+`
+Show more lines
+
+Select:
+
+Plain Text
+1
+Domain
+Show more lines
+
+Enter:
+
+Plain Text
+1
+yourdomain.local
+2
+``
+Show more lines
+
+Provide:
+
+Plain Text
+1
+Domain Administrator credentials
+2
+`
+Show more lines
+
+Example:
+
+Plain Text
+1
+YOKOLAB\Administrator
+Show more lines
+
+Reboot.
+
+Step 6: Verify Domain Join
+
+Run:
+
+PowerShell
+1
+whoami
+Show more lines
+
+You should see:
+
+Plain Text
+1
+domain\administrator
+Show more lines
+
+Run:
+
+PowerShell
+1
+nltest /dsgetdc:<domain>
+Show more lines
+
+Example:
+
+PowerShell
+1
+nltest /dsgetdc:yokolab.local
+Show more lines
+
+It should find the DC.
+
+Step 7: Create a Service Account (Optional but Recommended)
+
+On AD Server:
+
+Create:
+
+Plain Text
+1
+svc_epo
+Show more lines
+
+Example:
+
+Plain Text
+1
+svc_epo@yokolab.local
+Show more lines
+
+Password:
+
+Plain Text
+1
+Never Expires
+Show more lines
+
+You can use this later for SQL/ePO services.
+
+Step 8: Install SQL Server 2019
+
+On ePO VM.
+
+Install:
+
+Plain Text
+1
+Database Engine Services
+Show more lines
+
+Only.
+
+Use:
+
+Plain Text
+1
+Mixed Authentication
+2
+ 
+Show more lines
+
+Enable:
+
+Plain Text
+1
+Windows Authentication
+2
++
+3
+SQL Authentication
+Show more lines
+
+Create:
+
+Plain Text
+1
+sa
+Show more lines
+
+password.
+
+Add:
+
+Plain Text
+1
+Domain Administrator
+Show more lines
+
+as SQL Admin.
+
+Step 9: Install SSMS
+
+Install:
+
+Plain Text
+1
+SQL Server Management Studio
+Show more lines
+
+After install:
+
+Connect to:
+
+Plain Text
+1
+localhost
+Show more lines
+
+If connected:
+
+✅ SQL Ready
+
+Step 10: Enable SQL TCP/IP
+
+Open:
+
+Plain Text
+1
+SQL Server Configuration Manager
+2
+``
+Show more lines
+
+Go to:
+
+Plain Text
+1
+SQL Server Network Configuration
+Show more lines
+
+Enable:
+
+Plain Text
+1
+TCP/IP
+Show more lines
+
+Restart:
+
+Plain Text
+1
+SQL Server Service
+Show more lines
+
+Very important.
+
+Step 11: Check Port 1433
+
+Run:
+
+PowerShell
+1
+netstat -ano | findstr 1433
+Show more lines
+
+Expected:
+
+Plain Text
+1
+LISTENING
+Show more lines
+Step 12: Install SQL Native Client
+
+From ePO media:
+
+Plain Text
+1
+Setup
+2
+└── SQLNativeClient
+3
+└── sqlncli_x64.exe
+Show more lines
+
+Run:
+
+Plain Text
+1
+sqlncli_x64.exe
+Show more lines
+
+Install it.
+
+This prevents some ePO installation failures.
+
+Step 13: Open Firewall Ports
+
+Open:
+
+Plain Text
+1
+1433
+2
+8443
+3
+8080
+4
+8081
+Show more lines
+
+PowerShell:
+
+PowerShell
+1
+New-NetFirewallRule -DisplayName "ePO 8443" -Direction Inbound -Protocol TCP -LocalPort 8443 -Action Allow
+Show more lines
+
+Do similarly for:
+
+Plain Text
+1
+1433
+2
+8080
+3
+8081
+Show more lines
+Step 14: Install ePO 5.10 SP2
+
+Run:
+
+Plain Text
+1
+Setup.exe
+Show more lines
+
+Choose:
+
+Plain Text
+1
+ePolicy Orchestrator
+2
+ 
+Show more lines
+
+When prompted:
+
+SQL Server
+Plain Text
+1
+localhost
+Show more lines
+Instance
+Plain Text
+1
+MSSQLSERVER
+Show more lines
+Authentication
+
+Either:
+
+Plain Text
+1
+sa
+Show more lines
+
+or
+
+Plain Text
+1
+svc_epo
+Show more lines
+Step 15: Let Installer Create Databases
+
+ePO creates:
+
+Plain Text
+1
+ePO Database
+2
+ePO Events Database
+Show more lines
+
+automatically.
+
+No manual DB creation needed.
+
+Step 16: First Login
+
+Open:
+
+Plain Text
+1
+https://epo01:8443
+Show more lines
+
+or
+
+Plain Text
+1
+https://<server-ip>:8443
+Show more lines
+
+Login using the ePO admin credentials created during installation.
+
+FAT Success Criteria
+
+At the end of Day 1, you should have:
+
+Plain Text
+1
+✅ Windows Server joined to AD
+2
+✅ SQL 2019 installed
+3
+✅ TCP/IP enabled
+4
+✅ SQL reachable
+5
+✅ ePO 5.10 SP2 installed
+6
+✅ ePO console accessible on 8443
+7
+✅ Successful login
+Show more lines
+
+Stop there.
